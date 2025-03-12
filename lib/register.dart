@@ -1,30 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home.dart';
-import 'api.dart';
-import 'welcome.dart'; // Giả sử file welcome.dart tồn tại
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({Key? key}) : super(key: key);
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<SignUpPage> createState() => _SignUpPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
   bool _isLoading = false;
+
+  Future<void> _selectDate() async {
+    DateTime initialDate =
+        DateTime.now().subtract(const Duration(days: 365 * 18));
+    DateTime firstDate = DateTime(1900);
+    DateTime lastDate = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+    if (picked != null) {
+      setState(() {
+        _dobController.text =
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+      });
+    }
+  }
 
   bool _isValidEmail(String email) {
     return RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
         .hasMatch(email);
   }
 
-  Future<void> _handleSignIn() async {
+  Future<String?> _simulateSignUp(
+      String fullName, String dob, String email, String password) async {
+    await Future.delayed(const Duration(seconds: 2));
+    // Dummy logic: assume sign up is successful if email isn't empty.
+    return email.isNotEmpty ? "dummy_access_token_signup" : "";
+  }
+
+  void _handleSignUp() async {
+    final fullName = _fullNameController.text.trim();
+    final dob = _dobController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
+    if (fullName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Full Name cannot be empty")),
+      );
+      return;
+    }
+    if (dob.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Date of Birth is required")),
+      );
+      return;
+    }
     if (!_isValidEmail(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Invalid email format")),
@@ -37,22 +81,29 @@ class _LoginPageState extends State<LoginPage> {
       );
       return;
     }
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match")),
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
-    // Gọi API đăng nhập từ api.dart
-    final token = await Api.login(email, password);
+    final accessToken = await _simulateSignUp(fullName, dob, email, password);
 
     setState(() {
       _isLoading = false;
     });
 
-    if (token != null && token.isNotEmpty) {
-      // Token đã được lưu vào SharedPreferences trong Api.login()
+    if (accessToken != null && accessToken.isNotEmpty) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('accessToken', accessToken);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Welcome!")),
+        const SnackBar(content: Text("Sign Up Successful!")),
       );
       Navigator.pushAndRemoveUntil(
         context,
@@ -80,8 +131,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Login failed, please check your credentials")),
+        const SnackBar(content: Text("Sign Up failed, please try again")),
       );
     }
   }
@@ -92,8 +142,7 @@ class _LoginPageState extends State<LoginPage> {
     final verticalPadding = MediaQuery.of(context).padding.vertical;
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
-    final loginButtonWidth =
-        isLandscape ? (size.width - 48) / 2 : double.infinity;
+    final buttonWidth = isLandscape ? (size.width - 48) / 2 : double.infinity;
 
     return Scaffold(
       body: Stack(
@@ -124,8 +173,9 @@ class _LoginPageState extends State<LoginPage> {
           SafeArea(
             child: SingleChildScrollView(
               child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(minHeight: size.height - verticalPadding),
+                constraints: BoxConstraints(
+                  minHeight: size.height - verticalPadding,
+                ),
                 child: IntrinsicHeight(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -141,6 +191,35 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 32),
+                        TextField(
+                          controller: _fullNameController,
+                          decoration: InputDecoration(
+                            hintText: 'Full Name',
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: const BorderSide(color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _dobController,
+                          readOnly: true,
+                          onTap: _selectDate,
+                          decoration: InputDecoration(
+                            hintText: 'Date of Birth',
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 16),
+                            suffixIcon: const Icon(Icons.calendar_today),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: const BorderSide(color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         TextField(
                           controller: _emailController,
                           decoration: InputDecoration(
@@ -167,9 +246,23 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _confirmPasswordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            hintText: 'Confirm Password',
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: const BorderSide(color: Colors.grey),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 24),
                         SizedBox(
-                          width: loginButtonWidth,
+                          width: buttonWidth,
                           height: 50,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -178,98 +271,39 @@ class _LoginPageState extends State<LoginPage> {
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            onPressed: _isLoading ? null : _handleSignIn,
+                            onPressed: _isLoading ? null : _handleSignUp,
                             child: _isLoading
                                 ? const CircularProgressIndicator(
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Colors.white),
                                   )
                                 : const Text(
-                                    'SIGN IN',
+                                    'SIGN UP',
                                     style: TextStyle(
                                         fontSize: 18, color: Colors.white),
                                   ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: () {
-                            // Handle Forgot Password
-                          },
-                          child: Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Colors.blueGrey.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4267B2),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                              onPressed: () {
-                                // Handle Facebook Sign In
-                              },
-                              icon: const Icon(Icons.facebook),
-                              label: const Text(
-                                'Sign In',
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.white),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                side: const BorderSide(
-                                  color: Color(0xFF2F3D85),
-                                  width: 2,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                              onPressed: () {
-                                // Handle Zalo Sign In
-                              },
-                              icon: Image.asset(
-                                'assets/images/zalo.png',
-                                width: 24,
-                                height: 24,
-                              ),
-                              label: const Text(
-                                'Zalo',
-                                style: TextStyle(
-                                    fontSize: 16, color: Color(0xFF2F3D85)),
-                              ),
-                            ),
-                          ],
                         ),
                         const SizedBox(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Don't have an account? ",
-                              style: TextStyle(color: Colors.grey.shade700),
+                              "Already have an account? ",
+                              style: TextStyle(
+                                color: Colors.grey.shade700,
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {
-                                // Handle Sign Up
+                                Navigator.pop(context);
                               },
                               child: const Text(
-                                'Sign Up',
+                                'Sign In',
                                 style: TextStyle(
-                                    color: Color(0xFF2F3D85),
-                                    fontWeight: FontWeight.bold),
+                                  color: Color(0xFF2F3D85),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],

@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
-import 'login.dart'; // <-- Import file login.dart
+import 'login.dart'; // Import file login.dart
+import 'register.dart';
 
 class Welcome extends StatelessWidget {
   const Welcome({Key? key}) : super(key: key);
+
+  // Helper method to create animated route
+  Route _createRoute(Widget page) {
+    return PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 700),
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(1.0, 0.0); // Start from right
+        const end = Offset.zero;
+        final slideTween = Tween(begin: begin, end: end)
+            .chain(CurveTween(curve: Curves.easeInOut));
+        final fadeTween = Tween<double>(begin: 0.0, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeIn));
+        return SlideTransition(
+          position: animation.drive(slideTween),
+          child: FadeTransition(
+            opacity: animation.drive(fadeTween),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +37,6 @@ class Welcome extends StatelessWidget {
         children: [
           // Nền trắng
           Container(color: Colors.white),
-
           // Đám mây xanh đậm ở dưới
           Positioned(
             bottom: 0,
@@ -26,7 +49,6 @@ class Welcome extends StatelessWidget {
               ),
             ),
           ),
-
           // Đám mây xanh nhạt phủ lên
           Positioned(
             bottom: 0,
@@ -39,7 +61,6 @@ class Welcome extends StatelessWidget {
               ),
             ),
           ),
-
           // Nội dung (HELLO !!, logo, nút)
           SafeArea(
             child: Padding(
@@ -73,8 +94,7 @@ class Welcome extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-
-                  // Nút SIGN IN
+                  // Nút SIGN IN with animation
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -86,12 +106,9 @@ class Welcome extends StatelessWidget {
                         ),
                       ),
                       onPressed: () {
-                        // Điều hướng sang LoginPage
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginPage(),
-                          ),
+                          _createRoute(const LoginPage()),
                         );
                       },
                       child: const Text(
@@ -104,8 +121,7 @@ class Welcome extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Nút SIGN UP
+                  // Nút SIGN UP with animation
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -121,7 +137,10 @@ class Welcome extends StatelessWidget {
                         ),
                       ),
                       onPressed: () {
-                        // TODO: handle SIGN UP
+                        Navigator.push(
+                          context,
+                          _createRoute(const SignUpPage()),
+                        );
                       },
                       child: const Text(
                         'SIGN UP',
@@ -149,7 +168,6 @@ class DarkCloudClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final path = Path();
     path.moveTo(0, size.height * 0.3);
-
     path.quadraticBezierTo(
       size.width * 0.2,
       size.height * 0.45,
@@ -168,7 +186,6 @@ class DarkCloudClipper extends CustomClipper<Path> {
       size.width,
       size.height * 0.3,
     );
-
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.close();
@@ -184,7 +201,6 @@ class LightCloudClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final path = Path();
     path.moveTo(0, size.height * 0.25);
-
     path.quadraticBezierTo(
       size.width * 0.2,
       size.height * 0.40,
@@ -203,7 +219,6 @@ class LightCloudClipper extends CustomClipper<Path> {
       size.width,
       size.height * 0.25,
     );
-
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.close();

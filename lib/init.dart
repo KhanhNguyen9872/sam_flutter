@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'welcome.dart'; // Import trang login
+import 'package:shared_preferences/shared_preferences.dart';
+import 'welcome.dart';
+import 'home.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({Key? key}) : super(key: key);
@@ -9,38 +11,57 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
-    // Chờ 1 giây, rồi chuyển sang LoginPage với hiệu ứng slide
-    Timer(const Duration(seconds: 1), () {
+    // Khởi tạo AnimationController cho hiệu ứng fade
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+    _animationController.forward();
+
+    Timer(const Duration(seconds: 1), () async {
+      // Lấy accessToken từ local storage
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? accessToken = prefs.getString('accessToken');
+
+      // Nếu có accessToken thì chuyển sang HomePage, nếu không thì đến Welcome Page
+      Widget nextPage;
+      if (accessToken != null && accessToken.isNotEmpty) {
+        nextPage = const HomePage();
+      } else {
+        nextPage = const Welcome();
+      }
+
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 700),
-          // Độ dài animation, 700ms
-
           pageBuilder: (context, animation, secondaryAnimation) {
-            return const Welcome();
+            return nextPage;
           },
-          transitionsBuilder: (
-            context,
-            animation,
-            secondaryAnimation,
-            child,
-          ) {
-            // Ở đây ta định nghĩa hiệu ứng slide
-            const begin = Offset(1.0, 0.0); // bắt đầu từ bên phải màn hình
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
             const end = Offset.zero;
-            final tween = Tween(begin: begin, end: end);
-            final offsetAnimation = animation.drive(
-              tween.chain(CurveTween(curve: Curves.easeInOut)),
-            );
-
+            final slideTween = Tween(begin: begin, end: end)
+                .chain(CurveTween(curve: Curves.easeInOut));
+            final fadeTween = Tween<double>(begin: 0.0, end: 1.0)
+                .chain(CurveTween(curve: Curves.easeIn));
             return SlideTransition(
-              position: offsetAnimation,
-              child: child,
+              position: animation.drive(slideTween),
+              child: FadeTransition(
+                opacity: animation.drive(fadeTween),
+                child: child,
+              ),
             );
           },
         ),
@@ -49,15 +70,24 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         color: const Color(0xFF1F3D85), // nền xanh
         alignment: Alignment.center,
-        child: Image.asset(
-          'assets/images/sam_academy.png',
-          width: 200,
-          fit: BoxFit.contain,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Image.asset(
+            'assets/images/sam_academy.png',
+            width: 200,
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     );
