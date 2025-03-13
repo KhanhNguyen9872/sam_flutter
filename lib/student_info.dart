@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'welcome.dart';
 import 'settings.dart';
 import 'api.dart';
+import 'chatbot_ai.dart';
 
 class StudentInfoPage extends StatefulWidget {
   const StudentInfoPage({Key? key}) : super(key: key);
@@ -29,6 +30,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
         "dob": "Ngày sinh",
         "phone": "Số điện thoại",
         "settings": "Cài đặt",
+        "chatbot_ai": "Hổ trợ với AI",
         "logout": "Đăng xuất",
       };
     } else {
@@ -39,6 +41,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
         "dob": "Date of Birth",
         "phone": "Phone Number",
         "settings": "Settings",
+        "chatbot_ai": "Support with AI",
         "logout": "Logout",
       };
     }
@@ -130,66 +133,71 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
     );
   }
 
-  // SAM header widget
   Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 10, left: 16, right: 16, bottom: 8),
-      decoration: const BoxDecoration(
-        color: Color(0xFF2F3D85),
-      ),
-      child: Column(
-        children: [
-          // Stack: logo, lời chào, và icon thông báo (placeholder)
-          Stack(
-            children: [
-              Center(
-                child: Image.asset(
-                  "assets/images/sam_edtech.png",
-                  width: 70,
-                  fit: BoxFit.contain,
-                ),
-              ),
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      "Hey Tai,",
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      "Welcome back",
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                bottom: 0,
-                child: IconButton(
-                  onPressed: () {
-                    // TODO: mở trang thông báo
-                  },
-                  icon: Image.asset(
-                    false
-                        ? "assets/images/have_notification.png"
-                        : "assets/images/notification.png",
-                    width: 20,
-                    height: 20,
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top - 26,
+          left: 16,
+          right: 16,
+          bottom: 12,
+        ),
+        decoration: const BoxDecoration(
+          color: Color(0xFF2F3D85),
+        ),
+        child: Column(
+          children: [
+            // Stack with logo, greeting, and notification icon.
+            Stack(
+              children: [
+                Center(
+                  child: Image.asset(
+                    "assets/images/sam_edtech.png",
+                    width: 70,
+                    fit: BoxFit.contain,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        "Hey Tai,",
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        "Welcome back",
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: IconButton(
+                    onPressed: () {
+                      // TODO: open notification screen.
+                    },
+                    icon: Image.asset(
+                      "assets/images/notification.png",
+                      width: 20,
+                      height: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -362,6 +370,33 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                       icon: const Icon(Icons.settings, color: Colors.white),
                       label: Text(
                         _labels["settings"]!,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  // Button Settings.
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(80, 110, 59, 0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const ChatbotPage()),
+                        );
+                        _loadSettings();
+                      },
+                      icon: const Icon(Icons.settings, color: Colors.white),
+                      label: Text(
+                        _labels["chatbot_ai"]!,
                         style: const TextStyle(color: Colors.white),
                       ),
                     ),

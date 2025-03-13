@@ -4,6 +4,10 @@ import 'footer_menu.dart';
 import 'student_info.dart';
 import 'api.dart';
 import 'welcome.dart'; // Assumes Welcome screen exists
+import 'features/thoi_khoa_bieu.dart';
+import 'features/ma_qr.dart';
+import 'features/xem_them.dart';
+import 'bai_hoc.dart';
 
 // Sample new screen to display feature details.
 class FeatureDetailScreen extends StatelessWidget {
@@ -130,7 +134,7 @@ class _HomePageState extends State<HomePage> {
         _studentInfoFuture = Api.getStudentInfo(accessToken: token);
         _hasNotificationFuture = Api.hasNotification(accessToken: token);
         _pages.add(_buildHomeContent());
-        _pages.add(const Center(child: Text("Trang Bài học")));
+        _pages.add(const BaiHocPage());
         _pages.add(const StudentInfoPage());
         _isLoadingToken = false;
       });
@@ -187,11 +191,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Header with student info and notification.
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 10, left: 16, right: 16, bottom: 8),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 12,
+        left: 16,
+        right: 16,
+        bottom: 12,
+      ),
       decoration: const BoxDecoration(
         color: Color(0xFF2F3D85),
         borderRadius: BorderRadius.only(
@@ -242,7 +250,6 @@ class _HomePageState extends State<HomePage> {
                         snapshot.error
                             .toString()
                             .contains("Phiên đăng nhập hết hạn")) {
-                      // If token expired, handle token expiry.
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         _handleTokenExpiry();
                       });
@@ -251,7 +258,7 @@ class _HomePageState extends State<HomePage> {
                     bool hasNotification = snapshot.data ?? false;
                     return IconButton(
                       onPressed: () {
-                        // TODO: Open notification screen.
+                        // TODO: open notification screen.
                       },
                       icon: Image.asset(
                         hasNotification
@@ -267,7 +274,6 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 8),
-          // Student info from API.
           FutureBuilder<Map<String, String>>(
             future: _studentInfoFuture,
             builder: (context, snapshot) {
@@ -284,47 +290,56 @@ class _HomePageState extends State<HomePage> {
                 return const CircularProgressIndicator();
               } else if (snapshot.hasData) {
                 final student = snapshot.data!;
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.grey.shade300,
-                        child: Icon(
-                          Icons.person,
-                          size: 24,
-                          color: Colors.grey.shade700,
+                return InkWell(
+                  onTap: () {
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //       builder: (context) => const StudentInfoPage()),
+                    // );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.grey.shade300,
+                          child: Icon(
+                            Icons.person,
+                            size: 24,
+                            color: Colors.grey.shade700,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            student["name"] ?? "",
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              student["name"] ?? "",
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            student["studentId"] ?? "",
-                            style: const TextStyle(
-                              color: Colors.black54,
-                              fontSize: 12,
+                            const SizedBox(height: 2),
+                            Text(
+                              student["studentId"] ?? "",
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 );
               } else {
@@ -365,14 +380,36 @@ class _HomePageState extends State<HomePage> {
                     final item = features[index];
                     return InkWell(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FeatureDetailScreen(
-                              title: item["title"]!,
+                        final title = item["title"]!;
+                        if (title == "Thời khóa biểu") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const ThoiKhoaBieuScreen()),
+                          );
+                        } else if (title == "Mã QR") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MaQRScreen()),
+                          );
+                        } else if (title == "Xem thêm") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const XemThemScreen()),
+                          );
+                        } else {
+                          // For other features, navigate to a generic detail screen:
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  FeatureDetailScreen(title: title),
                             ),
-                          ),
-                        );
+                          );
+                        }
                       },
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

@@ -145,6 +145,8 @@ class _SignUpPageState extends State<SignUpPage> {
     final buttonWidth = isLandscape ? (size.width - 48) / 2 : double.infinity;
 
     return Scaffold(
+      resizeToAvoidBottomInset:
+          false, // Prevent screen from resizing when keyboard appears
       body: Stack(
         children: [
           Container(color: Colors.white),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'home.dart';
 import 'api.dart';
-import 'welcome.dart'; // Giả sử file welcome.dart tồn tại
+import 'home.dart';
+import 'welcome.dart'; // Assumes file welcome.dart exists
+import 'register.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -42,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = true;
     });
 
-    // Gọi API đăng nhập từ api.dart
+    // Call API for login
     final token = await Api.login(email, password);
 
     setState(() {
@@ -50,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (token != null && token.isNotEmpty) {
-      // Token đã được lưu vào SharedPreferences trong Api.login()
+      // Token has been saved into SharedPreferences in Api.login()
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Welcome!")),
       );
@@ -96,28 +97,40 @@ class _LoginPageState extends State<LoginPage> {
         isLandscape ? (size.width - 48) / 2 : double.infinity;
 
     return Scaffold(
+      resizeToAvoidBottomInset:
+          false, // Prevent screen from resizing when keyboard appears
       body: Stack(
         children: [
           Container(color: Colors.white),
+          // Dark cloud at bottom
           Positioned(
             bottom: 0,
-            child: ClipPath(
-              clipper: DarkCloudClipper(),
-              child: Container(
-                width: size.width,
-                height: size.height * 0.3,
-                color: const Color(0xFF2F3D85),
+            child: MediaQuery.removeViewInsets(
+              removeBottom: true,
+              context: context,
+              child: ClipPath(
+                clipper: DarkCloudClipper(),
+                child: Container(
+                  width: size.width,
+                  height: size.height * 0.3,
+                  color: const Color(0xFF2F3D85),
+                ),
               ),
             ),
           ),
+          // Light cloud at bottom
           Positioned(
             bottom: 0,
-            child: ClipPath(
-              clipper: LightCloudClipper(),
-              child: Container(
-                width: size.width,
-                height: size.height * 0.25,
-                color: const Color(0xFF8AB4F8),
+            child: MediaQuery.removeViewInsets(
+              removeBottom: true,
+              context: context,
+              child: ClipPath(
+                clipper: LightCloudClipper(),
+                child: Container(
+                  width: size.width,
+                  height: size.height * 0.25,
+                  color: const Color(0xFF8AB4F8),
+                ),
               ),
             ),
           ),
@@ -263,7 +276,13 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             GestureDetector(
                               onTap: () {
-                                // Handle Sign Up
+                                // Navigate to Register page.
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SignUpPage(),
+                                  ),
+                                );
                               },
                               child: const Text(
                                 'Sign Up',

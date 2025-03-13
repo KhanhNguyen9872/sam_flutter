@@ -1,8 +1,11 @@
 // main.dart
 import 'package:flutter/material.dart';
 import 'init.dart'; // Splash
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('vi', null);
   runApp(const MyApp());
 }
 
