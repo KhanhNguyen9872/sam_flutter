@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../footer_menu.dart';
+import '../headers/header_child.dart';
 
 class MaQRScreen extends StatefulWidget {
   const MaQRScreen({Key? key}) : super(key: key);
@@ -121,42 +122,6 @@ class _MaQRScreenState extends State<MaQRScreen> {
     super.dispose();
   }
 
-  /// Build header similar to your timetable screen.
-  Widget _buildHeader() {
-    return Container(
-      color: const Color(0xFF2F3D85),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            "Mã QR",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: () {
-              // TODO: Open notification screen.
-            },
-            icon: Image.asset(
-              "assets/images/notification.png",
-              width: 20,
-              height: 20,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Build the QR scanner view using MobileScanner, with a custom overlay.
   Widget _buildQRScanner() {
     return Expanded(
@@ -211,7 +176,9 @@ class _MaQRScreenState extends State<MaQRScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            const HeaderChild(
+              title: "Mã QR",
+            ),
             Expanded(
               child: Column(
                 children: [

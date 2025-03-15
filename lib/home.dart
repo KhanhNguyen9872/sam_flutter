@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math' as math;
 import 'footer_menu.dart';
 import 'student_info.dart';
 import 'api.dart';
@@ -7,7 +8,9 @@ import 'welcome.dart'; // Assumes Welcome screen exists
 import 'features/thoi_khoa_bieu.dart';
 import 'features/ma_qr.dart';
 import 'features/xem_them.dart';
+import 'features/hoc_phi.dart';
 import 'bai_hoc.dart';
+import 'notifications.dart';
 
 // Sample new screen to display feature details.
 class FeatureDetailScreen extends StatelessWidget {
@@ -55,10 +58,25 @@ class _HomePageState extends State<HomePage> {
   String? _accessToken;
   bool _isLoadingToken = true;
 
+  // Instance variable for adjusted top padding.
+  // This value is computed from MediaQuery and defaults to 12.
+  double _adjustedTopPadding = 12;
+
   @override
   void initState() {
     super.initState();
     _loadToken();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Retrieve the top padding from MediaQuery.
+    final double topPadding = MediaQuery.of(context).padding.top;
+    // If topPadding > 26, subtract 26; otherwise default to 12.
+    setState(() {
+      _adjustedTopPadding = topPadding > 26 ? topPadding - 26 : 12;
+    });
   }
 
   /// Helper: Remove token from local storage, display error message, and navigate to Welcome screen.
@@ -195,7 +213,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 12,
+        top: _adjustedTopPadding,
         left: 16,
         right: 16,
         bottom: 12,
@@ -258,7 +276,11 @@ class _HomePageState extends State<HomePage> {
                     bool hasNotification = snapshot.data ?? false;
                     return IconButton(
                       onPressed: () {
-                        // TODO: open notification screen.
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const NotificationPage()),
+                        );
                       },
                       icon: Image.asset(
                         hasNotification
@@ -292,11 +314,7 @@ class _HomePageState extends State<HomePage> {
                 final student = snapshot.data!;
                 return InkWell(
                   onTap: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //       builder: (context) => const StudentInfoPage()),
-                    // );
+                    // Navigate to student info page if needed.
                   },
                   child: Container(
                     width: double.infinity,
@@ -387,6 +405,12 @@ class _HomePageState extends State<HomePage> {
                             MaterialPageRoute(
                                 builder: (context) =>
                                     const ThoiKhoaBieuScreen()),
+                          );
+                        } else if (title == "Học phí") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const TransactionPage()),
                           );
                         } else if (title == "Mã QR") {
                           Navigator.push(

@@ -3,7 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'welcome.dart';
 import 'settings.dart';
 import 'api.dart';
-import 'chatbot_ai.dart';
+import 'features/chatbot_ai.dart';
+import 'headers/header_main.dart';
 
 class StudentInfoPage extends StatefulWidget {
   const StudentInfoPage({Key? key}) : super(key: key);
@@ -17,8 +18,11 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
   bool _isDarkMode = false;
   String _selectedLanguage = "English"; // Default language
 
-  // Future lấy thông tin học viên từ API giả
+  // Future to fetch student details.
   late Future<Map<String, String>> _studentDataFuture;
+
+  // Instance variable to store adjusted top padding.
+  double _adjustedTopPadding = 12;
 
   // A simple language dictionary for labels.
   Map<String, String> get _labels {
@@ -30,7 +34,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
         "dob": "Ngày sinh",
         "phone": "Số điện thoại",
         "settings": "Cài đặt",
-        "chatbot_ai": "Hổ trợ với AI",
+        "chatbot_ai": "Trợ lý AI",
         "logout": "Đăng xuất",
       };
     } else {
@@ -54,7 +58,18 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
     _studentDataFuture = _loadStudentData();
   }
 
-  // Load dark mode và ngôn ngữ từ SharedPreferences.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Retrieve top padding from MediaQuery.
+    final double topPadding = MediaQuery.of(context).padding.top;
+    // If topPadding > 26, subtract 26; otherwise default to 12.
+    setState(() {
+      _adjustedTopPadding = topPadding > 26 ? topPadding - 26 : 12;
+    });
+  }
+
+  // Load dark mode and language settings from SharedPreferences.
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -63,14 +78,12 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
     });
   }
 
-  /// Lấy accessToken từ local.
-  /// Nếu không có, chuyển hướng về trang Welcome.
-  /// Nếu có, gọi API lấy thông tin học viên bằng accessToken đó.
+  /// Fetches the student's details using the access token.
+  /// If no token exists, navigates to the Welcome screen.
   Future<Map<String, String>> _loadStudentData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('accessToken');
     if (token == null) {
-      // Nếu không có token, chuyển hướng về Welcome.
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const Welcome()),
@@ -133,75 +146,6 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
     );
   }
 
-  Widget _buildHeader() {
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top - 26,
-          left: 16,
-          right: 16,
-          bottom: 12,
-        ),
-        decoration: const BoxDecoration(
-          color: Color(0xFF2F3D85),
-        ),
-        child: Column(
-          children: [
-            // Stack with logo, greeting, and notification icon.
-            Stack(
-              children: [
-                Center(
-                  child: Image.asset(
-                    "assets/images/sam_edtech.png",
-                    width: 70,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Hey Tai,",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        "Welcome back",
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: IconButton(
-                    onPressed: () {
-                      // TODO: open notification screen.
-                    },
-                    icon: Image.asset(
-                      "assets/images/notification.png",
-                      width: 20,
-                      height: 20,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final backgroundColor = _isDarkMode ? Colors.grey[850] : Colors.white;
@@ -213,7 +157,9 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildHeader(),
+            const HeaderMain(
+              userName: "Tai",
+            ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -228,7 +174,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                         ?.copyWith(color: textColor),
                   ),
                   const SizedBox(height: 16),
-                  // FutureBuilder lấy dữ liệu học viên.
+                  // FutureBuilder to load student data.
                   FutureBuilder<Map<String, String>>(
                     future: _studentDataFuture,
                     builder: (context, snapshot) {
@@ -272,7 +218,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  // Hiển thị thông tin chi tiết của học viên.
+                  // Display detailed student information.
                   FutureBuilder<Map<String, String>>(
                     future: _studentDataFuture,
                     builder: (context, snapshot) {
@@ -348,7 +294,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                     },
                   ),
                   const SizedBox(height: 32),
-                  // Button Settings.
+                  // Settings Button.
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -375,7 +321,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  // Button Settings.
+                  // Chatbot Button.
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -402,7 +348,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Button Logout.
+                  // Logout Button.
                   SizedBox(
                     width: double.infinity,
                     height: 50,

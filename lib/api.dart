@@ -137,7 +137,7 @@ class Api {
         "topic": "Buổi 5: Topic 5 Present Tenses",
         "teacher": "Name Teacher A",
         "room": "E303",
-        "date": "2025-03-17", // Monday
+        "date": "2025-03-17",
       },
       {
         "startTime": "08:30",
@@ -146,7 +146,7 @@ class Api {
         "topic": "Buổi 6: Topic 6 Future Tenses",
         "teacher": "Name Teacher A",
         "room": "E303",
-        "date": "2025-03-18", // Tuesday
+        "date": "2025-03-18",
       },
       {
         "startTime": "09:30",
@@ -155,7 +155,7 @@ class Api {
         "topic": "Buổi 2: Writing Skills",
         "teacher": "Name Teacher B",
         "room": "E304",
-        "date": "2025-03-18", // Tuesday
+        "date": "2025-03-18",
       },
       {
         "startTime": "07:00",
@@ -164,7 +164,7 @@ class Api {
         "topic": "Buổi 1: Grammar Basics",
         "teacher": "Name Teacher A",
         "room": "E303",
-        "date": "2025-04-05", // April example
+        "date": "2025-04-05",
       },
       {
         "startTime": "08:30",
@@ -221,7 +221,7 @@ class Api {
         "topic": "Buổi 7: Advanced Grammar",
         "teacher": "Name Teacher A",
         "room": "E303",
-        "date": "2025-03-19", // Wednesday
+        "date": "2025-03-19",
       },
       {
         "startTime": "13:00",
@@ -230,13 +230,14 @@ class Api {
         "topic": "Buổi 6: Listening Practice",
         "teacher": "Name Teacher B",
         "room": "E304",
-        "date": "2025-03-19", // Wednesday
+        "date": "2025-03-19",
       },
     ];
   }
 
   /// ---------------------------
   /// New: Simulated API call to get lesson data for bai_hoc.dart (requires valid accessToken).
+  /// ---------------------------
   static Future<List<Map<String, String>>> getLessons({
     required String accessToken,
   }) async {
@@ -276,6 +277,139 @@ class Api {
         "description": "Ôn tập và tổng kết lại toàn bộ kiến thức của bài học.",
         "duration": "30 phút",
         "date": "2025-03-14",
+      },
+    ];
+  }
+
+  /// ---------------------------
+  /// New: Simulated API call to get transaction data for hoc_phi.dart (requires valid accessToken).
+  /// ---------------------------
+  static Future<List<Map<String, String>>> getTransactions({
+    required String accessToken,
+  }) async {
+    if (!await _isTokenValid(accessToken)) {
+      throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+    }
+    // Simulate network delay for a realistic API call
+    await Future.delayed(const Duration(seconds: 1));
+    return [
+      {
+        "id": "#16221550",
+        "status": "Chưa thanh toán",
+        "description": "Học phí chính Khóa tháng 03/2025",
+        "amount": "3.500.000đ",
+        "paymentDate": "",
+      },
+      {
+        "id": "#16221551",
+        "status": "Đã thanh toán",
+        "description": "Học phí chính Khóa tháng 02/2025",
+        "amount": "3.500.000đ",
+        "paymentDate": "10/02/2025",
+      },
+      {
+        "id": "#16221552",
+        "status": "Đã thanh toán",
+        "description": "Học phí chính Khóa tháng 01/2025",
+        "amount": "3.500.000đ",
+        "paymentDate": "15/01/2025",
+      },
+      {
+        "id": "#16221553",
+        "status": "Chưa thanh toán",
+        "description": "Học phí phụ đạo tháng 03/2025",
+        "amount": "1.200.000đ",
+        "paymentDate": "",
+      },
+      {
+        "id": "#16221554",
+        "status": "Đã thanh toán",
+        "description": "Học phí chính Khóa tháng 12/2024",
+        "amount": "3.500.000đ",
+        "paymentDate": "20/12/2024",
+      },
+      {
+        "id": "#16221555",
+        "status": "Chưa thanh toán",
+        "description": "Học phí chính Khóa tháng 04/2025",
+        "amount": "3.500.000đ",
+        "paymentDate": "",
+      },
+    ];
+  }
+
+  /// ---------------------------
+  /// New: Simulated API call to get notifications data (requires valid accessToken).
+  /// ---------------------------
+  static Future<List<Map<String, dynamic>>> getNotifications({
+    required String accessToken,
+  }) async {
+    if (!await _isTokenValid(accessToken)) {
+      throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+    }
+    // Simulate a network delay.
+    await Future.delayed(const Duration(seconds: 1));
+    return [
+      {
+        "title": "Welcome!",
+        "message": "Thank you for joining our platform.",
+        "dateTime": DateTime.now()
+            .subtract(const Duration(minutes: 5))
+            .toIso8601String(),
+        "icon": "star",
+        "iconColor": 0xFFFFC107, // Amber.
+      },
+      {
+        "title": "New Class Available",
+        "message": "Check out our new TOEIC preparation class.",
+        "dateTime": DateTime.now()
+            .subtract(const Duration(hours: 1, minutes: 20))
+            .toIso8601String(),
+        "icon": "school",
+        "iconColor": 0xFF2196F3, // Blue.
+      },
+      {
+        "title": "Payment Successful",
+        "message": "Your tuition fee payment has been received.",
+        "dateTime":
+            DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
+        "icon": "payment",
+        "iconColor": 0xFF4CAF50, // Green.
+      },
+      {
+        "title": "Reminder",
+        "message": "Don’t forget to complete your daily exercises.",
+        "dateTime": DateTime.now()
+            .subtract(const Duration(days: 1, hours: 2))
+            .toIso8601String(),
+        "icon": "alarm",
+        "iconColor": 0xFFF44336, // Red.
+      },
+      {
+        "title": "Event Update",
+        "message": "Our upcoming event has been rescheduled. Check details.",
+        "dateTime":
+            DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
+        "icon": "event",
+        "iconColor": 0xFF9C27B0, // Purple.
+      },
+      {
+        "title": "Maintenance Notice",
+        "message": "Our system will undergo maintenance at midnight.",
+        "dateTime": DateTime.now()
+            .subtract(const Duration(days: 3, hours: 4))
+            .toIso8601String(),
+        "icon": "build",
+        "iconColor": 0xFF607D8B, // Blue Gray.
+      },
+      {
+        "title": "Survey Invitation",
+        "message": "Please participate in our quick survey for better service.",
+        "dateTime": DateTime.now()
+            .subtract(const Duration(days: 4, hours: 2))
+            .toIso8601String(),
+        "icon": "question_answer",
+        "iconColor": 0xFF795548, // Brown.
       },
     ];
   }

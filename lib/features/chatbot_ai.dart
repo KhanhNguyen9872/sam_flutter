@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../headers/header_child.dart';
 
 class ChatbotPage extends StatefulWidget {
   const ChatbotPage({Key? key}) : super(key: key);
@@ -10,6 +11,20 @@ class ChatbotPage extends StatefulWidget {
 class _ChatbotPageState extends State<ChatbotPage> {
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
+
+  // Instance variable for adjusted top padding.
+  double _adjustedTopPadding = 12;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get the top padding from MediaQuery.
+    final double topPadding = MediaQuery.of(context).padding.top;
+    // Compute the adjusted top padding: if topPadding is greater than 26, subtract 26; otherwise default to 12.
+    setState(() {
+      _adjustedTopPadding = topPadding > 26 ? topPadding - 26 : 12;
+    });
+  }
 
   void _handleSend() {
     final text = _controller.text.trim();
@@ -31,58 +46,15 @@ class _ChatbotPageState extends State<ChatbotPage> {
     });
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top - 26, // Reduced top padding
-          left: 12,
-          right: 12,
-          bottom: 6,
-        ),
-        color: const Color(0xFF2F3D85),
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                "Chatbot AI",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: () {
-                // TODO: Open notification screen.
-              },
-              icon: Image.asset(
-                "assets/images/notification.png",
-                width: 20,
-                height: 20,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // Remove AppBar; we now use a custom header.
       body: Column(
         children: [
-          _buildHeader(context),
+          const HeaderChild(
+            title: "Trợ lý AI",
+          ),
           Expanded(
             child: Column(
               children: [
@@ -92,7 +64,9 @@ class _ChatbotPageState extends State<ChatbotPage> {
                           child: Text(
                             "Start the conversation...",
                             style: TextStyle(
-                                color: Colors.grey.shade600, fontSize: 16),
+                              color: Colors.grey.shade600,
+                              fontSize: 16,
+                            ),
                           ),
                         )
                       : ListView.builder(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../footer_menu.dart';
 import '../api.dart';
 import '../welcome.dart';
+import '../headers/header_child.dart';
 
 class ThoiKhoaBieuScreen extends StatefulWidget {
   const ThoiKhoaBieuScreen({Key? key}) : super(key: key);
@@ -445,49 +445,12 @@ class _ThoiKhoaBieuScreenState extends State<ThoiKhoaBieuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: FooterMenu(
-        currentIndex: 0,
-        onTap: (index) {
-          // Handle footer navigation if needed.
-        },
-      ),
       body: SafeArea(
         child: Column(
           children: [
             // Header: back button, title, notification icon.
-            Container(
-              color: const Color(0xFF2F3D85),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Thời Khóa Biểu",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      // TODO: open notification screen.
-                    },
-                    icon: Image.asset(
-                      "assets/images/notification.png",
-                      width: 20,
-                      height: 20,
-                    ),
-                  ),
-                ],
-              ),
+            const HeaderChild(
+              title: "Thời khóa biểu",
             ),
             // Sub-header with toggle and week/month selection.
             _buildSubHeader(),
