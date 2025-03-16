@@ -413,4 +413,41 @@ class Api {
       },
     ];
   }
+
+  /// Simulated API call to retrieve conversation history.
+  static Future<List<Map<String, dynamic>>> getHistoryMessage() async {
+    // Simulate network delay.
+    await Future.delayed(const Duration(milliseconds: 500));
+    // Return fake history messages.
+    return [
+      {
+        "text": "Chào bạn! Tôi có thể giúp gì cho bạn?",
+        "isUser": false,
+        "timestamp": DateTime.now()
+            .subtract(const Duration(minutes: 10))
+            .toIso8601String(),
+      },
+      {
+        "text": "Tôi cần trợ giúp về đơn hàng của tôi.",
+        "isUser": true,
+        "timestamp": DateTime.now()
+            .subtract(const Duration(minutes: 8))
+            .toIso8601String(),
+      },
+    ];
+  }
+
+  /// Simulated API call to clear conversation history.
+  static Future<void> clearMessage() async {
+    // Simulate network delay.
+    await Future.delayed(const Duration(milliseconds: 300));
+    // In a real implementation, clear messages on server/local storage.
+  }
+
+  /// Simulated API call for chatbot reply.
+  static Future<String> getChatbotReply(String message) async {
+    // Simulate network delay.
+    await Future.delayed(const Duration(milliseconds: 500));
+    return "Fake reply to: $message";
+  }
 }

@@ -3,6 +3,7 @@ import '../headers/header_child.dart';
 import 'thoi_khoa_bieu.dart';
 import 'hoc_phi.dart';
 import 'ma_qr.dart';
+import 'quiz/quiz.dart';
 
 class XemThemScreen extends StatelessWidget {
   const XemThemScreen({Key? key}) : super(key: key);
@@ -120,11 +121,11 @@ class XemThemScreen extends StatelessWidget {
                           MaterialPageRoute(
                               builder: (context) => const MaQRScreen()),
                         );
-                      } else if (title == "Xem thêm") {
+                      } else if (title == "Chơi Quizz") {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const XemThemScreen()),
+                              builder: (context) => const QuizSelectionPage()),
                         );
                       }
                     },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home.dart';
+import 'login.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -298,7 +299,12 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                             GestureDetector(
                               onTap: () {
-                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginPage(),
+                                  ),
+                                );
                               },
                               child: const Text(
                                 'Sign In',

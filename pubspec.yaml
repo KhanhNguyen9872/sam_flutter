@@ -72,6 +72,8 @@ flutter:
       - assets/images/xem_them.png
       - assets/images/student_avatar.png
       - assets/images/quiz.png
+      - assets/images/chatbot.png
+      - assets/images/user.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
