@@ -19,7 +19,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
   String _selectedLanguage = "English"; // Default language
 
   // Future to fetch student details.
-  late Future<Map<String, String>> _studentDataFuture;
+  late Future<Map<String, dynamic>> _studentDataFuture;
 
   // Instance variable to store adjusted top padding.
   double _adjustedTopPadding = 12;
@@ -80,7 +80,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
 
   /// Fetches the student's details using the access token.
   /// If no token exists, navigates to the Welcome screen.
-  Future<Map<String, String>> _loadStudentData() async {
+  Future<Map<String, dynamic>> _loadStudentData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('accessToken');
     if (token == null) {
@@ -94,6 +94,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
     try {
       return await Api.getStudentDetails(accessToken: token);
     } catch (e) {
+      print("Error in _loadStudentData: $e");
       if (e.toString().contains("Phiên đăng nhập hết hạn")) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -157,9 +158,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const HeaderMain(
-              userName: "Tai",
-            ),
+            const HeaderMain(userName: "Tai"),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -174,15 +173,17 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                         ?.copyWith(color: textColor),
                   ),
                   const SizedBox(height: 16),
-                  // FutureBuilder to load student data.
-                  FutureBuilder<Map<String, String>>(
+                  // FutureBuilder to load student data summary.
+                  FutureBuilder<Map<String, dynamic>>(
                     future: _studentDataFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
-                        return const Center(
-                            child: Text("Error loading student data"));
+                        print("Summary FutureBuilder error: ${snapshot.error}");
+                        return Center(
+                            child: Text(
+                                "Error loading student data: ${snapshot.error}"));
                       } else if (snapshot.hasData) {
                         final student = snapshot.data!;
                         return Card(
@@ -200,14 +201,15 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                                   : Colors.grey.shade300,
                             ),
                             title: Text(
-                              student["name"] ?? "",
+                              (student["name"] ?? "").toString(),
                               style: TextStyle(
                                 color: textColor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             subtitle: Text(
-                              student["studentId"] ?? "",
+                              "MSHV: " +
+                                  (student["studentId"]?.toString() ?? ""),
                               style:
                                   TextStyle(color: textColor.withOpacity(0.7)),
                             ),
@@ -218,15 +220,17 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  // Display detailed student information.
-                  FutureBuilder<Map<String, String>>(
+                  // FutureBuilder to display detailed student information.
+                  FutureBuilder<Map<String, dynamic>>(
                     future: _studentDataFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
-                        return const Center(
-                            child: Text("Error loading student data"));
+                        print("Details FutureBuilder error: ${snapshot.error}");
+                        return Center(
+                            child: Text(
+                                "Error loading student data: ${snapshot.error}"));
                       } else if (snapshot.hasData) {
                         final student = snapshot.data!;
                         return Column(
@@ -237,7 +241,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                                 Icon(Icons.email, color: iconColor),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${_labels["email"]}: ${student["email"] ?? "student@example.com"}",
+                                  "${_labels["email"]}: ${(student["email"] ?? "").toString()}",
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
@@ -251,7 +255,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                                 Icon(Icons.person, color: iconColor),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${_labels["fullName"]}: ${student["name"] ?? "TRƯỜNG VĂN TÀI"}",
+                                  "${_labels["fullName"]}: ${(student["name"] ?? "").toString()}",
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
@@ -265,7 +269,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                                 Icon(Icons.cake, color: iconColor),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${_labels["dob"]}: ${student["dob"] ?? "01/01/2000"}",
+                                  "${_labels["dob"]}: ${(student["dob"] ?? "").toString()}",
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
@@ -279,7 +283,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
                                 Icon(Icons.phone, color: iconColor),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${_labels["phone"]}: ${student["phone"] ?? "0123456789"}",
+                                  "${_labels["phone"]}: ${(student["phone"] ?? "").toString()}",
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium

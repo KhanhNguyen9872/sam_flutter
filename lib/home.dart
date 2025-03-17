@@ -149,7 +149,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _accessToken = token;
         _classesFuture = Api.getClasses(accessToken: token);
-        _studentInfoFuture = Api.getStudentInfo(accessToken: token);
+        _studentInfoFuture = Api.getStudentDetails(accessToken: token);
         _hasNotificationFuture = Api.hasNotification(accessToken: token);
         _pages.add(_buildHomeContent());
         _pages.add(const BaiHocPage());
@@ -348,7 +348,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              student["studentId"] ?? "",
+                              "MSHV: " + (student["studentId"] ?? ""),
                               style: const TextStyle(
                                 color: Colors.black54,
                                 fontSize: 12,

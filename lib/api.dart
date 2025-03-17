@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class Api {
+  static const String _apiUrl = "http://127.0.0.1:3000";
+
   /// Save accessToken and its expiry to SharedPreferences.
   static Future<void> _saveToken(String token, DateTime expiry) async {
     final prefs = await SharedPreferences.getInstance();
@@ -33,18 +37,98 @@ class Api {
     return (localToken == accessToken && DateTime.now().isBefore(expiry));
   }
 
-  /// Simulated API login (does not require token).
+  /// API login using POST /students/login.
   /// On success, saves accessToken and sets an expiry (60 minutes).
   static Future<String?> login(String email, String password) async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (email == "test@example.com" && password == "password") {
+    final response = await http.post(
+      Uri.parse('$_apiUrl/students/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final token = data['accessToken'] as String;
       final now = DateTime.now();
       final expiry = now.add(const Duration(minutes: 60));
-      final token = "dummy_access_token";
       await _saveToken(token, expiry);
       return token;
     }
     return null;
+  }
+
+  /// Registers a new student.
+  /// Sends a POST request to $_apiUrl/students/register with the following fields:
+  /// firstName, lastName, dob, email, password, and gender.
+  /// Gender is mapped as follows: "Male" -> 0, "Female" -> 1, "Other" -> 2.
+  /// On success, returns the access token.
+  static Future<String?> register({
+    required String firstName,
+    required String lastName,
+    required String dob,
+    required String email,
+    required String password,
+    required String gender,
+  }) async {
+    // Parse the date to SQL-compatible format.
+    // final parsedDob = parseDate(dob);
+
+    // Map gender string to an integer.
+    int genderValue;
+    if (gender == "Male") {
+      genderValue = 0;
+    } else if (gender == "Female") {
+      genderValue = 1;
+    } else {
+      genderValue = 2;
+    }
+
+    final response = await http.post(
+      Uri.parse('$_apiUrl/students/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'firstName': firstName,
+        'lastName': lastName,
+        'dob': dob,
+        'email': email,
+        'password': password,
+        'gender': genderValue,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      final token = data['accessToken']?.toString();
+      return token;
+    }
+    return null;
+  }
+
+  /// API call to get detailed student info using GET /students/info.
+  /// Debug prints have been added for console logging.
+  static Future<Map<String, String>> getStudentDetails({
+    required String accessToken,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_apiUrl/students/info'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    print('getStudentDetails response status: ${response.statusCode}');
+    print('getStudentDetails response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return {
+        'name': data['name'] ?? '',
+        'studentId': data['studentId']?.toString() ?? '',
+        'email': data['email'] ?? '',
+        'dob': data['dob'] ?? '',
+        'phone': data['phone'] ?? '',
+      };
+    } else {
+      throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+    }
   }
 
   /// Simulated API call to get class list for home page (requires valid accessToken).
@@ -77,22 +161,9 @@ class Api {
     ];
   }
 
-  /// Simulated API call to get student info for Home (requires valid accessToken).
-  static Future<Map<String, String>> getStudentInfo({
-    required String accessToken,
-  }) async {
-    if (!await _isTokenValid(accessToken)) {
-      throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
-    }
-    await Future.delayed(const Duration(milliseconds: 500));
-    return {
-      "name": "TRƯỜNG VĂN TÀI",
-      "studentId": "MSHV: G16-001",
-    };
-  }
-
   /// Simulated API call to get detailed student info (requires valid accessToken).
-  static Future<Map<String, String>> getStudentDetails({
+  /// This function is kept for legacy use (if no dedicated route exists).
+  static Future<Map<String, String>> getStudentExtraDetails({
     required String accessToken,
   }) async {
     if (!await _isTokenValid(accessToken)) {
@@ -245,7 +316,6 @@ class Api {
       throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
     }
     await Future.delayed(const Duration(milliseconds: 500));
-    // Generate fake lessons data.
     return [
       {
         "lessonTitle": "Bài học 1: Giới thiệu",
@@ -290,7 +360,6 @@ class Api {
     if (!await _isTokenValid(accessToken)) {
       throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
     }
-    // Simulate network delay for a realistic API call
     await Future.delayed(const Duration(seconds: 1));
     return [
       {
@@ -347,7 +416,6 @@ class Api {
     if (!await _isTokenValid(accessToken)) {
       throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
     }
-    // Simulate a network delay.
     await Future.delayed(const Duration(seconds: 1));
     return [
       {
@@ -357,7 +425,7 @@ class Api {
             .subtract(const Duration(minutes: 5))
             .toIso8601String(),
         "icon": "star",
-        "iconColor": 0xFFFFC107, // Amber.
+        "iconColor": 0xFFFFC107,
       },
       {
         "title": "New Class Available",
@@ -366,7 +434,7 @@ class Api {
             .subtract(const Duration(hours: 1, minutes: 20))
             .toIso8601String(),
         "icon": "school",
-        "iconColor": 0xFF2196F3, // Blue.
+        "iconColor": 0xFF2196F3,
       },
       {
         "title": "Payment Successful",
@@ -374,7 +442,7 @@ class Api {
         "dateTime":
             DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
         "icon": "payment",
-        "iconColor": 0xFF4CAF50, // Green.
+        "iconColor": 0xFF4CAF50,
       },
       {
         "title": "Reminder",
@@ -383,7 +451,7 @@ class Api {
             .subtract(const Duration(days: 1, hours: 2))
             .toIso8601String(),
         "icon": "alarm",
-        "iconColor": 0xFFF44336, // Red.
+        "iconColor": 0xFFF44336,
       },
       {
         "title": "Event Update",
@@ -391,7 +459,7 @@ class Api {
         "dateTime":
             DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
         "icon": "event",
-        "iconColor": 0xFF9C27B0, // Purple.
+        "iconColor": 0xFF9C27B0,
       },
       {
         "title": "Maintenance Notice",
@@ -400,7 +468,7 @@ class Api {
             .subtract(const Duration(days: 3, hours: 4))
             .toIso8601String(),
         "icon": "build",
-        "iconColor": 0xFF607D8B, // Blue Gray.
+        "iconColor": 0xFF607D8B,
       },
       {
         "title": "Survey Invitation",
@@ -409,16 +477,14 @@ class Api {
             .subtract(const Duration(days: 4, hours: 2))
             .toIso8601String(),
         "icon": "question_answer",
-        "iconColor": 0xFF795548, // Brown.
+        "iconColor": 0xFF795548,
       },
     ];
   }
 
   /// Simulated API call to retrieve conversation history.
   static Future<List<Map<String, dynamic>>> getHistoryMessage() async {
-    // Simulate network delay.
     await Future.delayed(const Duration(milliseconds: 500));
-    // Return fake history messages.
     return [
       {
         "text": "Chào bạn! Tôi có thể giúp gì cho bạn?",
@@ -439,14 +505,11 @@ class Api {
 
   /// Simulated API call to clear conversation history.
   static Future<void> clearMessage() async {
-    // Simulate network delay.
     await Future.delayed(const Duration(milliseconds: 300));
-    // In a real implementation, clear messages on server/local storage.
   }
 
   /// Simulated API call for chatbot reply.
   static Future<String> getChatbotReply(String message) async {
-    // Simulate network delay.
     await Future.delayed(const Duration(milliseconds: 500));
     return "Fake reply to: $message";
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'home.dart';
 import 'login.dart';
+import 'api.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -11,12 +11,18 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  final TextEditingController _fullNameController = TextEditingController();
+  // Controllers for text fields.
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+
+  // Gender selection
+  String _selectedGender = "Male";
+  final List<String> _genderOptions = ["Male", "Female", "Other"];
 
   bool _isLoading = false;
 
@@ -44,23 +50,23 @@ class _SignUpPageState extends State<SignUpPage> {
         .hasMatch(email);
   }
 
-  Future<String?> _simulateSignUp(
-      String fullName, String dob, String email, String password) async {
-    await Future.delayed(const Duration(seconds: 2));
-    // Dummy logic: assume sign up is successful if email isn't empty.
-    return email.isNotEmpty ? "dummy_access_token_signup" : "";
-  }
-
-  void _handleSignUp() async {
-    final fullName = _fullNameController.text.trim();
+  Future<void> _handleSignUp() async {
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
     final dob = _dobController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    if (fullName.isEmpty) {
+    if (firstName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Full Name cannot be empty")),
+        const SnackBar(content: Text("First Name cannot be empty")),
+      );
+      return;
+    }
+    if (lastName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Last Name cannot be empty")),
       );
       return;
     }
@@ -93,7 +99,14 @@ class _SignUpPageState extends State<SignUpPage> {
       _isLoading = true;
     });
 
-    final accessToken = await _simulateSignUp(fullName, dob, email, password);
+    final accessToken = await Api.register(
+      firstName: firstName,
+      lastName: lastName,
+      dob: dob,
+      email: email,
+      password: password,
+      gender: _selectedGender,
+    );
 
     setState(() {
       _isLoading = false;
@@ -106,12 +119,13 @@ class _SignUpPageState extends State<SignUpPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Sign Up Successful!")),
       );
+      // Redirect to login page after sign-up is successful.
       Navigator.pushAndRemoveUntil(
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 700),
           pageBuilder: (context, animation, secondaryAnimation) =>
-              const HomePage(),
+              const LoginPage(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(1.0, 0.0);
             const end = Offset.zero;
@@ -146,11 +160,11 @@ class _SignUpPageState extends State<SignUpPage> {
     final buttonWidth = isLandscape ? (size.width - 48) / 2 : double.infinity;
 
     return Scaffold(
-      resizeToAvoidBottomInset:
-          false, // Prevent screen from resizing when keyboard appears
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           Container(color: Colors.white),
+          // Background shapes.
           Positioned(
             bottom: 0,
             child: ClipPath(
@@ -174,149 +188,206 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
           ),
           SafeArea(
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: size.height - verticalPadding,
-                ),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Center(
-                          child: Image.asset(
-                            'assets/images/sam_academy.png',
-                            width: 150,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        TextField(
-                          controller: _fullNameController,
-                          decoration: InputDecoration(
-                            hintText: 'Full Name',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 16),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(color: Colors.grey),
+            child: Center(
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: size.height - verticalPadding,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 16),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          // SAM Logo placed at the very top, smaller.
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8, bottom: 16),
+                            child: Center(
+                              child: Image.asset(
+                                'assets/images/sam_academy.png',
+                                width: size.width * 0.2,
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _dobController,
-                          readOnly: true,
-                          onTap: _selectDate,
-                          decoration: InputDecoration(
-                            hintText: 'Date of Birth',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 16),
-                            suffixIcon: const Icon(Icons.calendar_today),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _emailController,
-                          decoration: InputDecoration(
-                            hintText: 'Email',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 16),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            hintText: 'Password',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 16),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _confirmPasswordController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            hintText: 'Confirm Password',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 16),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: buttonWidth,
-                          height: 50,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2F3D85),
-                              shape: RoundedRectangleBorder(
+                          // First Name TextField.
+                          TextField(
+                            controller: _firstNameController,
+                            decoration: InputDecoration(
+                              hintText: 'First Name',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
                               ),
                             ),
-                            onPressed: _isLoading ? null : _handleSignUp,
-                            child: _isLoading
-                                ? const CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                  )
-                                : const Text(
-                                    'SIGN UP',
-                                    style: TextStyle(
-                                        fontSize: 18, color: Colors.white),
-                                  ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Already have an account? ",
-                              style: TextStyle(
-                                color: Colors.grey.shade700,
+                          const SizedBox(height: 16),
+                          // Last Name TextField.
+                          TextField(
+                            controller: _lastNameController,
+                            decoration: InputDecoration(
+                              hintText: 'Last Name',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Sign In',
-                                style: TextStyle(
-                                  color: Color(0xFF2F3D85),
-                                  fontWeight: FontWeight.bold,
+                          ),
+                          const SizedBox(height: 16),
+                          // Gender selection dropdown.
+                          DropdownButtonFormField<String>(
+                            value: _selectedGender,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
+                              ),
+                            ),
+                            items: _genderOptions
+                                .map((gender) => DropdownMenuItem<String>(
+                                      value: gender,
+                                      child: Text(gender),
+                                    ))
+                                .toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedGender = value;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          // Date of Birth TextField.
+                          TextField(
+                            controller: _dobController,
+                            readOnly: true,
+                            onTap: _selectDate,
+                            decoration: InputDecoration(
+                              hintText: 'Date of Birth',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              suffixIcon: const Icon(Icons.calendar_today),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Email TextField.
+                          TextField(
+                            controller: _emailController,
+                            decoration: InputDecoration(
+                              hintText: 'Email',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Password TextField.
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              hintText: 'Password',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Confirm Password TextField.
+                          TextField(
+                            controller: _confirmPasswordController,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              hintText: 'Confirm Password',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          // Sign Up Button.
+                          SizedBox(
+                            width: buttonWidth,
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2F3D85),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
+                              onPressed: _isLoading ? null : _handleSignUp,
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    )
+                                  : const Text(
+                                      'SIGN UP',
+                                      style: TextStyle(
+                                          fontSize: 18, color: Colors.white),
+                                    ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(height: 24),
+                          // Sign In Link.
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Already have an account? ",
+                                style: TextStyle(color: Colors.grey.shade700),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const LoginPage()),
+                                  );
+                                },
+                                child: const Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    color: Color(0xFF2F3D85),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
