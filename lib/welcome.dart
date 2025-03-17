@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'login.dart'; // Import file login.dart
-import 'register.dart';
 
 class Welcome extends StatelessWidget {
   const Welcome({Key? key}) : super(key: key);
@@ -137,10 +136,10 @@ class Welcome extends StatelessWidget {
                         ),
                       ),
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          _createRoute(const SignUpPage()),
-                        );
+                        // Navigator.push(
+                        //   context,
+                        // _createRoute(const SignUpPage()),
+                        // );
                       },
                       child: const Text(
                         'SIGN UP',

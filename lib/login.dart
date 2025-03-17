@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api.dart';
 import 'home.dart';
 import 'welcome.dart'; // Assumes file welcome.dart exists
-import 'register.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -276,13 +275,13 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             GestureDetector(
                               onTap: () {
-                                // Navigate to Register page.
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const SignUpPage(),
-                                  ),
-                                );
+                                // // Navigate to Register page.
+                                // Navigator.push(
+                                //   context,
+                                //   MaterialPageRoute(
+                                //     builder: (context) => const SignUpPage(),
+                                //   ),
+                                // );
                               },
                               child: const Text(
                                 'Sign Up',
