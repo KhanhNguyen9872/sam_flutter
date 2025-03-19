@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'quiz.dart'; // Reuse the Quiz and Question models from quiz.dart
+import '../../models/quiz.dart';
 import '../../headers/header_child_no_notification.dart';
 
 class QuizManagePage extends StatefulWidget {
@@ -10,35 +10,35 @@ class QuizManagePage extends StatefulWidget {
 }
 
 class _QuizManagePageState extends State<QuizManagePage> {
-  List<Quiz> _localQuizzes = [];
+  List<Quiz> _danhSachQuizLocal = [];
 
   @override
   void initState() {
     super.initState();
-    _loadLocalQuizzes();
+    _taiQuizLocal();
   }
 
-  Future<void> _loadLocalQuizzes() async {
-    // Simulate loading user-created quizzes from local storage.
+  Future<void> _taiQuizLocal() async {
+    // Mô phỏng tải các quiz do người dùng tạo từ bộ nhớ cục bộ.
     await Future.delayed(const Duration(milliseconds: 500));
     setState(() {
-      _localQuizzes = [
+      _danhSachQuizLocal = [
         Quiz(
           id: 'local1',
-          title: 'My Custom Quiz',
-          description: 'A quiz I created myself',
+          title: 'Quiz Tùy Chỉnh Của Tôi',
+          description: 'Một quiz do tôi tự tạo',
           isDefault: false,
           questions: [
             Question(
-              question: 'Custom Question 1',
+              question: 'Câu Hỏi Tùy Chỉnh 1',
               imageUrl: null,
-              options: ['Option A', 'Option B', 'Option C', 'Option D'],
+              options: ['Lựa Chọn A', 'Lựa Chọn B', 'Lựa Chọn C', 'Lựa Chọn D'],
               correctIndex: 0,
             ),
             Question(
-              question: 'Custom Question 2',
+              question: 'Câu Hỏi Tùy Chỉnh 2',
               imageUrl: null,
-              options: ['Option A', 'Option B', 'Option C', 'Option D'],
+              options: ['Lựa Chọn A', 'Lựa Chọn B', 'Lựa Chọn C', 'Lựa Chọn D'],
               correctIndex: 2,
             ),
           ],
@@ -47,18 +47,18 @@ class _QuizManagePageState extends State<QuizManagePage> {
     });
   }
 
-  void _addQuiz() {
-    // For demonstration, we simulate adding a new quiz.
+  void _themQuiz() {
+    // Để minh họa, chúng ta mô phỏng việc thêm một quiz mới.
     setState(() {
-      _localQuizzes.add(
+      _danhSachQuizLocal.add(
         Quiz(
-          id: 'local${_localQuizzes.length + 1}',
-          title: 'New Custom Quiz',
-          description: 'A newly created quiz',
+          id: 'local${_danhSachQuizLocal.length + 1}',
+          title: 'Quiz Tùy Chỉnh Mới',
+          description: 'Một quiz vừa được tạo',
           isDefault: false,
           questions: [
             Question(
-              question: 'New Question 1',
+              question: 'Câu Hỏi Mới 1',
               imageUrl: null,
               options: ['A', 'B', 'C', 'D'],
               correctIndex: 1,
@@ -69,39 +69,39 @@ class _QuizManagePageState extends State<QuizManagePage> {
     });
   }
 
-  void _editQuiz(Quiz quiz) {
-    // For demonstration, just show a Snackbar.
+  void _suaQuiz(Quiz quiz) {
+    // Để minh họa, chỉ hiển thị một SnackBar.
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Edit quiz: ${quiz.title}')),
+      SnackBar(content: Text('Sửa quiz: ${quiz.title}')),
     );
   }
 
-  void _deleteQuiz(Quiz quiz) {
+  void _xoaQuiz(Quiz quiz) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Quiz'),
-        content: const Text('Are you sure you want to delete this quiz?'),
+        title: const Text('Xóa Quiz'),
+        content: const Text('Bạn có chắc chắn muốn xóa quiz này không?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () {
               setState(() {
-                _localQuizzes.removeWhere((q) => q.id == quiz.id);
+                _danhSachQuizLocal.removeWhere((q) => q.id == quiz.id);
               });
               Navigator.of(context).pop();
             },
-            child: const Text('Delete'),
+            child: const Text('Xóa'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuizItem(Quiz quiz) {
+  Widget _taoMucQuiz(Quiz quiz) {
     return Card(
       child: ListTile(
         title: Text(quiz.title),
@@ -111,11 +111,11 @@ class _QuizManagePageState extends State<QuizManagePage> {
           children: [
             IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () => _editQuiz(quiz),
+              onPressed: () => _suaQuiz(quiz),
             ),
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () => _deleteQuiz(quiz),
+              onPressed: () => _xoaQuiz(quiz),
             ),
           ],
         ),
@@ -126,22 +126,22 @@ class _QuizManagePageState extends State<QuizManagePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Use the header at the top.
+      // Sử dụng tiêu đề ở trên cùng.
       body: Column(
         children: [
-          const HeaderChildNoNotification(title: "Manage Your Own Quiz"),
+          const HeaderChildNoNotification(title: "Quản Lý Quiz Của Bạn"),
           Expanded(
-            child: _localQuizzes.isEmpty
-                ? const Center(child: Text('No quizzes found.'))
+            child: _danhSachQuizLocal.isEmpty
+                ? const Center(child: Text('Không tìm thấy quiz nào.'))
                 : ListView(
                     padding: const EdgeInsets.all(16),
-                    children: _localQuizzes.map(_buildQuizItem).toList(),
+                    children: _danhSachQuizLocal.map(_taoMucQuiz).toList(),
                   ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addQuiz,
+        onPressed: _themQuiz,
         child: const Icon(Icons.add),
       ),
     );

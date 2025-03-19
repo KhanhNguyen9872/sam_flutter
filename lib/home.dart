@@ -9,6 +9,8 @@ import 'features/thoi_khoa_bieu.dart';
 import 'features/ma_qr.dart';
 import 'features/xem_them.dart';
 import 'features/hoc_phi.dart';
+import 'features/danh_sach.dart';
+import 'features/ket_qua_hoc_tap.dart';
 import 'bai_hoc.dart';
 import 'notifications.dart';
 
@@ -59,7 +61,6 @@ class _HomePageState extends State<HomePage> {
   bool _isLoadingToken = true;
 
   // Instance variable for adjusted top padding.
-  // This value is computed from MediaQuery and defaults to 12.
   double _adjustedTopPadding = 12;
 
   @override
@@ -71,9 +72,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Retrieve the top padding from MediaQuery.
     final double topPadding = MediaQuery.of(context).padding.top;
-    // If topPadding > 26, subtract 26; otherwise default to 12.
     setState(() {
       _adjustedTopPadding = topPadding > 26 ? topPadding - 26 : 12;
     });
@@ -83,12 +82,10 @@ class _HomePageState extends State<HomePage> {
   Future<void> _handleTokenExpiry() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('accessToken');
-    // Show error message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
           content: Text("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!")),
     );
-    // Navigate to Welcome screen
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const Welcome()),
@@ -99,7 +96,6 @@ class _HomePageState extends State<HomePage> {
   /// Load the accessToken from local storage. If not found, navigate to Welcome.
   /// If found, initialize API calls with that token.
   Future<void> _loadToken() async {
-    // Initialize _featuresFuture with a fixed list wrapped in Future.value()
     setState(() {
       _featuresFuture = Future.value([
         {
@@ -148,7 +144,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       setState(() {
         _accessToken = token;
-        _classesFuture = Api.getClasses(accessToken: token);
+        _classesFuture = Api.getTimetable(accessToken: token);
         _studentInfoFuture = Api.getStudentDetails(accessToken: token);
         _hasNotificationFuture = Api.hasNotification(accessToken: token);
         _pages.add(_buildHomeContent());
@@ -159,9 +155,20 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Helper function to remove diacritics (accent marks) from a string.
+  String _removeDiacritics(String input) {
+    const withDia =
+        "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝŸàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿ";
+    const withoutDia =
+        "AAAAAAACEEEEIIIIDNOOOOOOUUUUYYaAAAAAAACEEEEIIIIDNOOOOOOUUUUYy";
+    for (int i = 0; i < withDia.length; i++) {
+      input = input.replaceAll(withDia[i], withoutDia[i]);
+    }
+    return input;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // While loading token, show a progress indicator.
     if (_isLoadingToken) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -227,7 +234,7 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Column(
         children: [
-          // Stack with logo, greeting, and notification icon.
+          // Stack with logo, dynamic greeting, and notification icon.
           Stack(
             children: [
               Center(
@@ -237,26 +244,57 @@ class _HomePageState extends State<HomePage> {
                   fit: BoxFit.contain,
                 ),
               ),
+              // Dynamic greeting using student's first_name converted to ASCII.
               Positioned(
                 left: 0,
                 top: 0,
                 bottom: 0,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      "Hey Tai,",
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      "Welcome back",
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
+                child: FutureBuilder<Map<String, String>>(
+                  future: _studentInfoFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      final student = snapshot.data!;
+                      String firstName = student["first_name"] ?? "User";
+                      String asciiName = _removeDiacritics(firstName);
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Hey $asciiName,",
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            "Welcome back",
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                        ],
+                      );
+                    } else {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            "Hey,",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            "Welcome back",
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                        ],
+                      );
+                    }
+                  },
                 ),
               ),
+              // Notification icon.
               Positioned(
                 right: 0,
                 top: 0,
@@ -296,6 +334,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 8),
+          // Student info card.
           FutureBuilder<Map<String, String>>(
             future: _studentInfoFuture,
             builder: (context, snapshot) {
@@ -348,7 +387,8 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              "MSHV: " + (student["studentId"] ?? ""),
+                              "MSHV: " +
+                                  (student["studentId"]?.toString() ?? ""),
                               style: const TextStyle(
                                 color: Colors.black54,
                                 fontSize: 12,
@@ -370,7 +410,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Grid of features (fixed list) with InkWell for navigation.
+  // Grid of features with navigation.
   Widget _buildFeatureGrid() {
     return FutureBuilder<List<Map<String, String>>>(
       future: _featuresFuture,
@@ -418,6 +458,18 @@ class _HomePageState extends State<HomePage> {
                             MaterialPageRoute(
                                 builder: (context) => const MaQRScreen()),
                           );
+                        } else if (title == "Danh sách") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const DanhSach()),
+                          );
+                        } else if (title == "Kết quả học tập") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const KetQuaHocTap()),
+                          );
                         } else if (title == "Xem thêm") {
                           Navigator.push(
                             context,
@@ -425,7 +477,6 @@ class _HomePageState extends State<HomePage> {
                                 builder: (context) => const XemThemScreen()),
                           );
                         } else {
-                          // For other features, navigate to a generic detail screen:
                           Navigator.push(
                             context,
                             MaterialPageRoute(

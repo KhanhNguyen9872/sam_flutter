@@ -4,15 +4,44 @@ import '../welcome.dart';
 import '../api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class HeaderMain extends StatelessWidget {
-  final String userName;
+class HeaderMain extends StatefulWidget {
   final String subtitle;
 
   const HeaderMain({
     Key? key,
-    required this.userName,
     this.subtitle = "Welcome back",
   }) : super(key: key);
+
+  @override
+  State<HeaderMain> createState() => _HeaderMainState();
+}
+
+class _HeaderMainState extends State<HeaderMain> {
+  String? firstName;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserName();
+  }
+
+  Future<void> _fetchUserName() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('accessToken');
+      if (token == null) {
+        throw Exception("Phiên đăng nhập hết hạn");
+      }
+      final userDetails = await Api.getStudentDetails(accessToken: token);
+      setState(() {
+        firstName = userDetails["first_name"] ?? "User";
+      });
+    } catch (e) {
+      setState(() {
+        firstName = "User";
+      });
+    }
+  }
 
   Future<bool> _checkNotification() async {
     final prefs = await SharedPreferences.getInstance();
@@ -25,7 +54,6 @@ class HeaderMain extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tính toán padding trên dựa trên MediaQuery.
     final double topPadding = MediaQuery.of(context).padding.top;
     final double adjustedTopPadding = topPadding > 26 ? topPadding - 26 : 12;
 
@@ -60,7 +88,7 @@ class HeaderMain extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Hey $userName,",
+                    "Hey ${firstName ?? "..."},",
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -68,7 +96,7 @@ class HeaderMain extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    subtitle,
+                    widget.subtitle,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,

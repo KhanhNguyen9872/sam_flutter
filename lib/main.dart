@@ -2,8 +2,10 @@
 import 'package:flutter/material.dart';
 import 'init.dart'; // Splash
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 Future<void> main() async {
+  tz.initializeTimeZones(); // Initialize timezone data
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('vi', null);
   runApp(const MyApp());

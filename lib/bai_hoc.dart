@@ -150,7 +150,7 @@ class _BaiHocPageState extends State<BaiHocPage> {
       body: Column(
         children: [
           // HeaderMain hiển thị phần đầu trang.
-          const HeaderMain(userName: "Tai"),
+          const HeaderMain(),
           // Tiêu đề trang.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

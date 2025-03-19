@@ -4,6 +4,8 @@ import 'thoi_khoa_bieu.dart';
 import 'hoc_phi.dart';
 import 'ma_qr.dart';
 import 'quiz/quiz.dart';
+import 'danh_sach.dart';
+import 'ket_qua_hoc_tap.dart';
 
 class XemThemScreen extends StatelessWidget {
   const XemThemScreen({Key? key}) : super(key: key);
@@ -120,6 +122,18 @@ class XemThemScreen extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                               builder: (context) => const MaQRScreen()),
+                        );
+                      } else if (title == "Danh sách") {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const DanhSach()),
+                        );
+                      } else if (title == "Kết quả học tập") {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const KetQuaHocTap()),
                         );
                       } else if (title == "Chơi Quizz") {
                         Navigator.push(

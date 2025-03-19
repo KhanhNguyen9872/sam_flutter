@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../footer_menu.dart';
 import '../headers/header_child.dart';
 
 class MaQRScreen extends StatefulWidget {
@@ -167,12 +166,6 @@ class _MaQRScreenState extends State<MaQRScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: FooterMenu(
-        currentIndex: 0,
-        onTap: (index) {
-          // Handle footer navigation if needed.
-        },
-      ),
       body: SafeArea(
         child: Column(
           children: [

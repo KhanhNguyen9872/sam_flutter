@@ -85,9 +85,10 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Future<List<NotificationItem>> _fetchNotifications() async {
-    // Log in to retrieve a valid token.
-    String? token = await Api.login("test@example.com", "password");
-    if (token == null) throw Exception("Login failed");
+    // Retrieve the access token from local storage.
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken');
+    if (token == null) throw Exception("Phiên đăng nhập hết hạn");
     final data = await Api.getNotifications(accessToken: token);
     return data.map<NotificationItem>((map) {
       // Map API string to IconData.

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'quiz.dart'; // Import the Quiz and Question models
+import '../../models/quiz.dart';
 import '../../headers/header_child_no_notification.dart';
 
 class QuizPlayPage extends StatefulWidget {
@@ -13,116 +13,116 @@ class QuizPlayPage extends StatefulWidget {
 
 class _QuizPlayPageState extends State<QuizPlayPage>
     with TickerProviderStateMixin {
-  int _currentQuestionIndex = 0;
-  int _score = 0;
-  int _correctCount = 0; // Track correct answers.
-  bool _answered = false;
-  int _selectedOptionIndex = -1;
-  static const int questionDuration = 15; // seconds per question.
-  int _remainingTime = questionDuration;
-  Timer? _timer;
-  AnimationController? _progressController;
-  bool _timeUp = false; // Flag for timeout animation.
+  int _chiSoCauHoiHienTai = 0;
+  int _diemSo = 0;
+  int _soCauDung = 0; // Theo dõi số câu trả lời đúng.
+  bool _daTraLoi = false;
+  int _chiSoLuaChon = -1;
+  static const int thoiGianMoiCau = 15; // giây cho mỗi câu hỏi.
+  int _thoiGianConLai = thoiGianMoiCau;
+  Timer? _boDemThoiGian;
+  AnimationController? _boDieuKhienTienTrinh;
+  bool _hetThoiGian = false; // Cờ cho hoạt hình hết thời gian.
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
-    _startProgressAnimation();
+    _batDauDemThoiGian();
+    _batDauHoatHinhTienTrinh();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _progressController?.dispose();
+    _boDemThoiGian?.cancel();
+    _boDieuKhienTienTrinh?.dispose();
     super.dispose();
   }
 
-  void _startTimer() {
-    _remainingTime = questionDuration;
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingTime == 0) {
-        _handleTimeout();
+  void _batDauDemThoiGian() {
+    _thoiGianConLai = thoiGianMoiCau;
+    _boDemThoiGian?.cancel();
+    _boDemThoiGian = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_thoiGianConLai == 0) {
+        _xuLyHetThoiGian();
       } else {
         setState(() {
-          _remainingTime--;
+          _thoiGianConLai--;
         });
       }
     });
   }
 
-  void _startProgressAnimation() {
-    _progressController?.dispose();
-    _progressController = AnimationController(
+  void _batDauHoatHinhTienTrinh() {
+    _boDieuKhienTienTrinh?.dispose();
+    _boDieuKhienTienTrinh = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: questionDuration),
+      duration: const Duration(seconds: thoiGianMoiCau),
     );
-    _progressController?.forward();
+    _boDieuKhienTienTrinh?.forward();
   }
 
-  void _handleTimeout() {
-    _timer?.cancel();
-    _progressController?.stop();
+  void _xuLyHetThoiGian() {
+    _boDemThoiGian?.cancel();
+    _boDieuKhienTienTrinh?.stop();
     setState(() {
-      _answered = true;
-      _timeUp = true;
+      _daTraLoi = true;
+      _hetThoiGian = true;
     });
     Future.delayed(const Duration(seconds: 1), () {
       setState(() {
-        _timeUp = false;
+        _hetThoiGian = false;
       });
-      _goToNextQuestion();
+      _chuyenDenCauTiepTheo();
     });
   }
 
-  void _selectOption(int index) {
-    if (_answered) return;
-    _timer?.cancel(); // Stop timer immediately.
-    _progressController?.stop();
+  void _chonLuaChon(int chiSo) {
+    if (_daTraLoi) return;
+    _boDemThoiGian?.cancel(); // Dừng bộ đếm thời gian ngay lập tức.
+    _boDieuKhienTienTrinh?.stop();
     setState(() {
-      _answered = true;
-      _selectedOptionIndex = index;
-      if (index == widget.quiz.questions![_currentQuestionIndex].correctIndex) {
-        _score += _remainingTime; // Add remaining time to score if correct.
-        _correctCount++;
+      _daTraLoi = true;
+      _chiSoLuaChon = chiSo;
+      if (chiSo == widget.quiz.questions![_chiSoCauHoiHienTai].correctIndex) {
+        _diemSo += _thoiGianConLai; // Cộng thời gian còn lại vào điểm nếu đúng.
+        _soCauDung++;
       }
     });
     Future.delayed(const Duration(seconds: 2), () {
-      _goToNextQuestion();
+      _chuyenDenCauTiepTheo();
     });
   }
 
-  void _goToNextQuestion() {
-    if (_currentQuestionIndex < widget.quiz.questions!.length - 1) {
+  void _chuyenDenCauTiepTheo() {
+    if (_chiSoCauHoiHienTai < widget.quiz.questions!.length - 1) {
       setState(() {
-        _currentQuestionIndex++;
-        _answered = false;
-        _selectedOptionIndex = -1;
+        _chiSoCauHoiHienTai++;
+        _daTraLoi = false;
+        _chiSoLuaChon = -1;
       });
-      _startTimer();
-      _startProgressAnimation();
+      _batDauDemThoiGian();
+      _batDauHoatHinhTienTrinh();
     } else {
-      _showResultDialog();
+      _hienThiKetQua();
     }
   }
 
-  void _showResultDialog() {
-    _timer?.cancel();
-    int totalQuestions = widget.quiz.questions!.length;
-    int incorrectCount = totalQuestions - _correctCount;
+  void _hienThiKetQua() {
+    _boDemThoiGian?.cancel();
+    int tongSoCau = widget.quiz.questions!.length;
+    int soCauSai = tongSoCau - _soCauDung;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Quiz Completed'),
-        content: Text(
-            'Your score: $_score\nCorrect: $_correctCount\nIncorrect: $incorrectCount'),
+        title: const Text('Quiz Hoàn Thành'),
+        content:
+            Text('Điểm của bạn: $_diemSo\nĐúng: $_soCauDung\nSai: $soCauSai'),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Close dialog.
-              Navigator.of(context).pop(); // Go back to quiz selection.
+              Navigator.of(context).pop(); // Đóng hộp thoại.
+              Navigator.of(context).pop(); // Quay lại trang chọn quiz.
             },
             child: const Text('OK'),
           ),
@@ -131,45 +131,45 @@ class _QuizPlayPageState extends State<QuizPlayPage>
     );
   }
 
-  Future<bool> _onWillPop() async {
-    // If quiz isn't complete, show confirmation popup.
-    if (_currentQuestionIndex < widget.quiz.questions!.length - 1) {
-      bool? exitQuiz = await showDialog<bool>(
+  Future<bool> _khiQuayLai() async {
+    // Nếu quiz chưa hoàn thành, hiển thị hộp thoại xác nhận.
+    if (_chiSoCauHoiHienTai < widget.quiz.questions!.length - 1) {
+      bool? thoatQuiz = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Exit Quiz?'),
+          title: const Text('Thoát Quiz?'),
           content: const Text(
-              'The quiz is not complete. Do you really want to exit? Your progress will be lost.'),
+              'Quiz chưa hoàn thành. Bạn có thực sự muốn thoát không? Tiến trình của bạn sẽ bị mất.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('No'),
+              child: const Text('Không'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Yes'),
+              child: const Text('Có'),
             ),
           ],
         ),
       );
-      return exitQuiz ?? false;
+      return thoatQuiz ?? false;
     }
-    return true; // Allow pop if quiz is complete.
+    return true; // Cho phép quay lại nếu quiz đã hoàn thành.
   }
 
   @override
   Widget build(BuildContext context) {
-    final question = widget.quiz.questions![_currentQuestionIndex];
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    // Use original font sizes for answer buttons.
-    final answerFontSize = screenWidth < 360 ? 16.0 : 20.0;
-    final questionFontSize = screenWidth < 360 ? 20.0 : 26.0;
-    // Revert to larger answer buttons with childAspectRatio = 0.8 (small screens) or 1.0 (large screens).
-    final double childAspectRatio = screenHeight < 600 ? 0.8 : 1.0;
+    final cauHoi = widget.quiz.questions![_chiSoCauHoiHienTai];
+    final chieuRongManHinh = MediaQuery.of(context).size.width;
+    final chieuCaoManHinh = MediaQuery.of(context).size.height;
+    // Sử dụng kích thước chữ gốc cho các nút trả lời.
+    final kichThuocChuTraLoi = chieuRongManHinh < 360 ? 16.0 : 20.0;
+    final kichThuocChuCauHoi = chieuRongManHinh < 360 ? 20.0 : 26.0;
+    // Quay lại nút trả lời lớn hơn với childAspectRatio = 0.8 (màn hình nhỏ) hoặc 1.0 (màn hình lớn).
+    final double tyLeCon = chieuCaoManHinh < 600 ? 0.8 : 1.0;
 
-    // Define four colors for answer squares.
-    final List<Color> answerColors = [
+    // Xác định bốn màu cho các ô trả lời.
+    final List<Color> mauTraLoi = [
       Colors.blue,
       Colors.red,
       Colors.green,
@@ -177,16 +177,16 @@ class _QuizPlayPageState extends State<QuizPlayPage>
     ];
 
     return WillPopScope(
-      onWillPop: _onWillPop,
+      onWillPop: _khiQuayLai,
       child: Scaffold(
-        // Instead of using an AppBar, we show our custom header widget at the top.
+        // Thay vì dùng AppBar, chúng ta hiển thị widget tiêu đề tùy chỉnh ở trên cùng.
         body: SafeArea(
           child: Column(
             children: [
-              // Custom header.
-              const HeaderChildNoNotification(title: "Quiz Play"),
-              // The rest of the quiz layout.
-              // Top row: Timer on left, "Question x of y" on right.
+              // Tiêu đề tùy chỉnh.
+              const HeaderChildNoNotification(title: "Chơi Quiz"),
+              // Phần còn lại của bố cục quiz.
+              // Hàng trên cùng: Bộ đếm thời gian bên trái, "Câu hỏi x của y" bên phải.
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -199,10 +199,10 @@ class _QuizPlayPageState extends State<QuizPlayPage>
                           width: 40,
                           height: 40,
                           child: AnimatedBuilder(
-                            animation: _progressController!,
+                            animation: _boDieuKhienTienTrinh!,
                             builder: (context, child) {
                               return CircularProgressIndicator(
-                                value: 1 - _progressController!.value,
+                                value: 1 - _boDieuKhienTienTrinh!.value,
                                 strokeWidth: 3,
                                 backgroundColor: Colors.grey.shade300,
                                 valueColor: const AlwaysStoppedAnimation<Color>(
@@ -216,8 +216,8 @@ class _QuizPlayPageState extends State<QuizPlayPage>
                           transitionBuilder: (child, animation) =>
                               ScaleTransition(scale: animation, child: child),
                           child: Text(
-                            '$_remainingTime',
-                            key: ValueKey<int>(_remainingTime),
+                            '$_thoiGianConLai',
+                            key: ValueKey<int>(_thoiGianConLai),
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
@@ -226,7 +226,7 @@ class _QuizPlayPageState extends State<QuizPlayPage>
                     ),
                     const Spacer(),
                     Text(
-                      'Question ${_currentQuestionIndex + 1} of ${widget.quiz.questions!.length}',
+                      'Câu hỏi ${_chiSoCauHoiHienTai + 1} / ${widget.quiz.questions!.length}',
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
@@ -234,15 +234,15 @@ class _QuizPlayPageState extends State<QuizPlayPage>
                 ),
               ),
               const Divider(),
-              // Reduced Question area.
+              // Khu vực câu hỏi thu nhỏ.
               Expanded(
                 flex: 1,
                 child: Stack(
                   children: [
                     Center(
-                      child: question.imageUrl != null
+                      child: cauHoi.imageUrl != null
                           ? Image.network(
-                              question.imageUrl!,
+                              cauHoi.imageUrl!,
                               height: 150,
                               width: double.infinity,
                               fit: BoxFit.cover,
@@ -251,17 +251,17 @@ class _QuizPlayPageState extends State<QuizPlayPage>
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
-                                question.question,
+                                cauHoi.question,
                                 style: TextStyle(
-                                    fontSize: questionFontSize,
+                                    fontSize: kichThuocChuCauHoi,
                                     fontWeight: FontWeight.bold),
                                 textAlign: TextAlign.center,
                               ),
                             ),
                     ),
-                    // "Time's Up!" overlay.
+                    // Lớp phủ "Hết thời gian!".
                     AnimatedOpacity(
-                      opacity: _timeUp ? 1.0 : 0.0,
+                      opacity: _hetThoiGian ? 1.0 : 0.0,
                       duration: const Duration(milliseconds: 500),
                       child: Center(
                         child: Container(
@@ -271,10 +271,10 @@ class _QuizPlayPageState extends State<QuizPlayPage>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            "Time's Up!",
+                            "Hết Thời Gian!",
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: questionFontSize,
+                              fontSize: kichThuocChuCauHoi,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -284,7 +284,7 @@ class _QuizPlayPageState extends State<QuizPlayPage>
                   ],
                 ),
               ),
-              // Answer options area.
+              // Khu vực lựa chọn đáp án.
               Expanded(
                 flex: 3,
                 child: Align(
@@ -296,35 +296,34 @@ class _QuizPlayPageState extends State<QuizPlayPage>
                       crossAxisCount: 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: childAspectRatio,
+                      childAspectRatio: tyLeCon,
                     ),
-                    itemCount: question.options.length,
+                    itemCount: cauHoi.options.length,
                     itemBuilder: (context, index) {
-                      Color btnColor =
-                          answerColors[index % answerColors.length];
-                      if (_answered) {
-                        if (index == question.correctIndex) {
-                          btnColor = Colors.green;
-                        } else if (index == _selectedOptionIndex &&
-                            index != question.correctIndex) {
-                          btnColor = Colors.red;
+                      Color mauNut = mauTraLoi[index % mauTraLoi.length];
+                      if (_daTraLoi) {
+                        if (index == cauHoi.correctIndex) {
+                          mauNut = Colors.green;
+                        } else if (index == _chiSoLuaChon &&
+                            index != cauHoi.correctIndex) {
+                          mauNut = Colors.red;
                         } else {
-                          btnColor = Colors.grey;
+                          mauNut = Colors.grey;
                         }
                       }
                       return GestureDetector(
-                        onTap: () => _selectOption(index),
+                        onTap: () => _chonLuaChon(index),
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
-                            color: btnColor,
+                            color: mauNut,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            question.options[index],
+                            cauHoi.options[index],
                             style: TextStyle(
-                              fontSize: answerFontSize,
+                              fontSize: kichThuocChuTraLoi,
                               color: Colors.white,
                             ),
                             textAlign: TextAlign.center,

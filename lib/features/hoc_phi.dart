@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../api.dart'; // Ensure the correct path if placed in a different folder
 import '../headers/header_child.dart';
 
@@ -39,12 +40,12 @@ class _TransactionPageState extends State<TransactionPage> {
     _transactionsFuture = _fetchTransactions();
   }
 
-  /// Fetch transactions from the fake API.
+  /// Fetch transactions from the API using a token stored locally.
   Future<List<Transaction>> _fetchTransactions() async {
-    // Ensure user is "logged in" to get a valid token.
-    String? token = await Api.login("test@example.com", "password");
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken');
     if (token == null) {
-      throw Exception("Login failed");
+      throw Exception("Phiên đăng nhập hết hạn");
     }
     final transactionsData = await Api.getTransactions(accessToken: token);
     // Map API data to Transaction objects.

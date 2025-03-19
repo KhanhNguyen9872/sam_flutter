@@ -158,7 +158,7 @@ class _StudentInfoPageState extends State<StudentInfoPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const HeaderMain(userName: "Tai"),
+            const HeaderMain(),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(

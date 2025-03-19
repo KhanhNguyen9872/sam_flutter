@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // Import intl package
+import './models/quiz.dart';
 
 class Api {
   static const String _apiUrl = "http://127.0.0.1:3000/api/v1";
@@ -57,53 +60,6 @@ class Api {
     return null;
   }
 
-  /// Registers a new student.
-  /// Sends a POST request to $_apiUrl/students/register with the following fields:
-  /// firstName, lastName, dob, email, password, and gender.
-  /// Gender is mapped as follows: "Male" -> 0, "Female" -> 1, "Other" -> 2.
-  /// On success, returns the access token.
-  static Future<String?> register({
-    required String firstName,
-    required String lastName,
-    required String dob,
-    required String email,
-    required String password,
-    required String gender,
-  }) async {
-    // Parse the date to SQL-compatible format.
-    // final parsedDob = parseDate(dob);
-
-    // Map gender string to an integer.
-    int genderValue;
-    if (gender == "Male") {
-      genderValue = 0;
-    } else if (gender == "Female") {
-      genderValue = 1;
-    } else {
-      genderValue = 2;
-    }
-
-    final response = await http.post(
-      Uri.parse('$_apiUrl/students/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'firstName': firstName,
-        'lastName': lastName,
-        'dob': dob,
-        'email': email,
-        'password': password,
-        'gender': genderValue,
-      }),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      final token = data['accessToken']?.toString();
-      return token;
-    }
-    return null;
-  }
-
   /// API call to get detailed student info using GET /students/info.
   /// Debug prints have been added for console logging.
   static Future<Map<String, String>> getStudentDetails({
@@ -120,6 +76,7 @@ class Api {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return {
+        'first_name': data['first_name'] ?? '',
         'name': data['name'] ?? '',
         'studentId': data['studentId']?.toString() ?? '',
         'email': data['email'] ?? '',
@@ -131,52 +88,41 @@ class Api {
     }
   }
 
-  /// Simulated API call to get class list for home page (requires valid accessToken).
-  static Future<List<Map<String, String>>> getClasses({
+  /// API call to get timetable data (requires valid accessToken).
+  static Future<List<Map<String, String>>> getTimetable({
     required String accessToken,
   }) async {
     if (!await _isTokenValid(accessToken)) {
       throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
     }
-    await Future.delayed(const Duration(milliseconds: 500));
-    return [
-      {
-        "title": "LUYỆN THI TOEIC",
-        "session": "Buổi 1: Present Tenses",
-        "timeRange": "9:00 - 10:30",
-        "date": "Thứ 6, 2/3/2025",
-        "teacher": "Thầy John Smith",
-        "room": "E303",
-        "status": "Đang diễn ra"
-      },
-      {
-        "title": "LUYỆN THI IELTS",
-        "session": "Buổi 2: Future Tenses",
-        "timeRange": "10:45 - 12:00",
-        "date": "Thứ 6, 2/3/2025",
-        "teacher": "Cô Anna",
-        "room": "E305",
-        "status": "Sắp diễn ra"
-      },
-    ];
-  }
 
-  /// Simulated API call to get detailed student info (requires valid accessToken).
-  /// This function is kept for legacy use (if no dedicated route exists).
-  static Future<Map<String, String>> getStudentExtraDetails({
-    required String accessToken,
-  }) async {
-    if (!await _isTokenValid(accessToken)) {
-      throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+    final response = await http.get(
+      Uri.parse('$_apiUrl/timetables'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data.map((item) {
+        return {
+          'title': item['title']?.toString() ?? '',
+          'session': item['topic']?.toString() ?? '',
+          'time_start': item['time_start']?.toString() ?? '',
+          'time_stop': item['time_stop']?.toString() ?? '',
+          'timeRange': (item['time_start']?.toString() ?? '') +
+              ' - ' +
+              (item['time_stop']?.toString() ?? ''),
+          'date': item['date']?.toString() ?? '',
+          'teacher': item['teacher']?.toString() ?? '',
+          'room': item['room']?.toString() ?? '',
+          'class': item['class']?.toString() ?? '',
+          'status': item['status']?.toString() ?? '',
+        };
+      }).toList();
+    } else {
+      throw Exception("Không thể lấy thông tin lịch học. Vui lòng thử lại!");
     }
-    await Future.delayed(const Duration(milliseconds: 500));
-    return {
-      "name": "TRƯỜNG VĂN TÀI",
-      "studentId": "MSHV: G16-001",
-      "email": "student@example.com",
-      "dob": "01/01/2000",
-      "phone": "0123456789",
-    };
   }
 
   /// Simulated API call to check for new notifications (requires valid accessToken).
@@ -190,120 +136,59 @@ class Api {
     return false;
   }
 
-  /// ---------------------------
-  /// Schedule classes API simulation
-  /// ---------------------------
   static Future<List<Map<String, String>>> getScheduleClasses({
     required String accessToken,
   }) async {
     if (!await _isTokenValid(accessToken)) {
       throw Exception("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
     }
-    await Future.delayed(const Duration(milliseconds: 500));
-    return [
-      {
-        "startTime": "07:00",
-        "endTime": "08:30",
-        "title": "LUYỆN THI TOEIC",
-        "topic": "Buổi 5: Topic 5 Present Tenses",
-        "teacher": "Name Teacher A",
-        "room": "E303",
-        "date": "2025-03-17",
-      },
-      {
-        "startTime": "08:30",
-        "endTime": "09:30",
-        "title": "LUYỆN THI TOEIC",
-        "topic": "Buổi 6: Topic 6 Future Tenses",
-        "teacher": "Name Teacher A",
-        "room": "E303",
-        "date": "2025-03-18",
-      },
-      {
-        "startTime": "09:30",
-        "endTime": "10:30",
-        "title": "LUYỆN THI IELTS",
-        "topic": "Buổi 2: Writing Skills",
-        "teacher": "Name Teacher B",
-        "room": "E304",
-        "date": "2025-03-18",
-      },
-      {
-        "startTime": "07:00",
-        "endTime": "08:30",
-        "title": "LUYỆN THI TOEIC",
-        "topic": "Buổi 1: Grammar Basics",
-        "teacher": "Name Teacher A",
-        "room": "E303",
-        "date": "2025-04-05",
-      },
-      {
-        "startTime": "08:30",
-        "endTime": "09:30",
-        "title": "LUYỆN THI IELTS",
-        "topic": "Buổi 3: Listening",
-        "teacher": "Name Teacher B",
-        "room": "E304",
-        "date": "2025-04-07",
-      },
-      // Additional classes for 13/03/2025
-      {
-        "startTime": "06:30",
-        "endTime": "08:00",
-        "title": "LUYỆN THI TOEIC",
-        "topic": "Buổi 2: Vocabulary Building",
-        "teacher": "Name Teacher C",
-        "room": "E305",
-        "date": "2025-03-13",
-      },
-      {
-        "startTime": "08:15",
-        "endTime": "09:45",
-        "title": "LUYỆN THI IELTS",
-        "topic": "Buổi 4: Reading Comprehension",
-        "teacher": "Name Teacher D",
-        "room": "E306",
-        "date": "2025-03-13",
-      },
-      // Additional classes for 14/03/2025
-      {
-        "startTime": "07:30",
-        "endTime": "09:00",
-        "title": "LUYỆN THI TOEIC",
-        "topic": "Buổi 3: Listening & Speaking",
-        "teacher": "Name Teacher C",
-        "room": "E305",
-        "date": "2025-03-14",
-      },
-      {
-        "startTime": "09:00",
-        "endTime": "10:30",
-        "title": "LUYỆN THI IELTS",
-        "topic": "Buổi 5: Essay Writing",
-        "teacher": "Name Teacher D",
-        "room": "E306",
-        "date": "2025-03-14",
-      },
-      // More sample classes for variety
-      {
-        "startTime": "10:45",
-        "endTime": "12:15",
-        "title": "LUYỆN THI TOEIC",
-        "topic": "Buổi 7: Advanced Grammar",
-        "teacher": "Name Teacher A",
-        "room": "E303",
-        "date": "2025-03-19",
-      },
-      {
-        "startTime": "13:00",
-        "endTime": "14:30",
-        "title": "LUYỆN THI IELTS",
-        "topic": "Buổi 6: Listening Practice",
-        "teacher": "Name Teacher B",
-        "room": "E304",
-        "date": "2025-03-19",
-      },
-    ];
+
+    final response = await http.get(
+      Uri.parse('$_apiUrl/timetables'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data.map((item) {
+        // Date Conversion: Parse and Format
+        String formattedDate = '';
+        try {
+          final DateFormat inputFormat = DateFormat('dd/MM/yyyy');
+          final DateTime parsedDate =
+              inputFormat.parse(item['date']?.toString() ?? '');
+          formattedDate = DateFormat('yyyy-MM-dd').format(parsedDate);
+        } catch (e) {
+          // Handle parsing errors, e.g., if 'date' is null or invalid
+          try {
+            //If dd/MM/yyyy fails, attempt parsing with yyyy-MM-dd
+            final DateTime parsedDate =
+                DateTime.parse(item['date']?.toString() ?? '');
+            formattedDate = DateFormat('yyyy-MM-dd').format(parsedDate);
+          } catch (e) {
+            // Handle parsing errors, e.g., if 'date' is null or invalid
+            formattedDate = ''; // Or some default value, or log the error
+            print("Date parsing error: $e");
+          }
+        }
+
+        return {
+          'startTime': item['time_start']?.toString() ?? '',
+          'endTime': item['time_stop']?.toString() ?? '',
+          'title': item['title']?.toString() ?? '',
+          'topic': item['topic']?.toString() ?? '',
+          'teacher': item['teacher']?.toString() ?? '',
+          'room': item['room']?.toString() ?? '',
+          'date': formattedDate, // Use the formatted date
+        };
+      }).toList();
+    } else {
+      print('getScheduleClasses response status: ${response.statusCode}');
+      print('getScheduleClasses response body: ${response.body}');
+      throw Exception(
+          "Không thể lấy thông tin lịch học. Vui lòng thử lại! Status code: ${response.statusCode}");
+    }
   }
 
   /// ---------------------------
@@ -482,35 +367,136 @@ class Api {
     ];
   }
 
-  /// Simulated API call to retrieve conversation history.
-  static Future<List<Map<String, dynamic>>> getHistoryMessage() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return [
+  // Fake implementation of getAcademicResults
+  static Future<List<dynamic>> getAcademicResults(
+      {required String accessToken}) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Check token validity
+    if (accessToken.isEmpty || accessToken == 'expired_token') {
+      throw Exception('Phiên đăng nhập hết hạn');
+    }
+
+    // Generate fake academic results
+    final List<Map<String, dynamic>> fakeResults = [
       {
-        "text": "Chào bạn! Tôi có thể giúp gì cho bạn?",
-        "isUser": false,
-        "timestamp": DateTime.now()
-            .subtract(const Duration(minutes: 10))
-            .toIso8601String(),
+        'subject': 'Mathematics',
+        'score': 85.5,
+        'semester': 'Fall 2023',
       },
       {
-        "text": "Tôi cần trợ giúp về đơn hàng của tôi.",
-        "isUser": true,
-        "timestamp": DateTime.now()
-            .subtract(const Duration(minutes: 8))
-            .toIso8601String(),
+        'subject': 'Physics',
+        'score': 78.0,
+        'semester': 'Fall 2023',
+      },
+      {
+        'subject': 'Chemistry',
+        'score': 92.0,
+        'semester': 'Fall 2023',
+      },
+      {
+        'subject': 'History',
+        'score': 65.5,
+        'semester': 'Spring 2023',
+      },
+      {
+        'subject': 'Literature',
+        'score': 88.0,
+        'semester': 'Spring 2023',
+      },
+      {
+        'subject': 'Computer Science',
+        'score': 95.0,
+        'semester': 'Fall 2024',
+      },
+      {
+        'subject': 'Biology',
+        'score': 73.5,
+        'semester': 'Fall 2024',
       },
     ];
+
+    // Shuffle the list to simulate dynamic data
+    fakeResults.shuffle(Random());
+
+    // Return a random subset of results (3 to 7 items) for variety
+    final int resultCount = 3 + Random().nextInt(5); // Between 3 and 7
+    return fakeResults.take(resultCount).toList();
   }
 
-  /// Simulated API call to clear conversation history.
-  static Future<void> clearMessage() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-  }
+  static Future<List<Quiz>> getDefaultQuizzes(
+      {required String accessToken}) async {
+    await Future.delayed(const Duration(seconds: 1));
+    if (accessToken.isEmpty || accessToken == 'expired_token') {
+      throw Exception('Phiên đăng nhập hết hạn');
+    }
 
-  /// Simulated API call for chatbot reply.
-  static Future<String> getChatbotReply(String message) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return "Fake reply to: $message";
+    final List<Quiz> fakeQuizzes = [
+      Quiz(
+        id: 'default1',
+        title: 'General Knowledge',
+        description: 'A quiz on general knowledge',
+        isDefault: true,
+        questions: [
+          Question(
+            question: 'What is the capital of France?',
+            imageUrl: null,
+            options: ['Berlin', 'London', 'Paris', 'Rome'],
+            correctIndex: 2,
+          ),
+          Question(
+            question: 'Which planet is known as the Red Planet?',
+            imageUrl: null,
+            options: ['Earth', 'Mars', 'Jupiter', 'Saturn'],
+            correctIndex: 1,
+          ),
+        ],
+      ),
+      Quiz(
+        id: 'default2',
+        title: 'Science Quiz',
+        description: 'Test your science knowledge',
+        isDefault: true,
+        questions: [
+          Question(
+            question: 'Who developed the theory of relativity?',
+            imageUrl: null,
+            options: ['Newton', 'Einstein', 'Galileo', 'Tesla'],
+            correctIndex: 1,
+          ),
+          Question(
+            question: 'What is the chemical symbol for water?',
+            imageUrl: null,
+            options: ['H2O', 'CO2', 'NaCl', 'O2'],
+            correctIndex: 0,
+          ),
+        ],
+      ),
+      Quiz(
+        id: 'default3',
+        title: 'History Trivia',
+        description: 'Explore historical facts',
+        isDefault: true,
+        questions: [
+          Question(
+            question: 'Who was the first President of the United States?',
+            imageUrl: null,
+            options: ['Lincoln', 'Washington', 'Jefferson', 'Adams'],
+            correctIndex: 1,
+          ),
+          Question(
+            question: 'In which year did World War II end?',
+            imageUrl: null,
+            options: ['1945', '1918', '1939', '1941'],
+            correctIndex: 0,
+          ),
+        ],
+      ),
+    ];
+
+    fakeQuizzes.shuffle(Random());
+    final int quizCount = 1 + Random().nextInt(3);
+    return fakeQuizzes.take(quizCount).toList();
   }
 }
