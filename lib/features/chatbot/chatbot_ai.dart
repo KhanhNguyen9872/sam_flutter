@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../headers/header_child.dart';
-import '../api.dart'; // Import the API for fake chatbot reply and history
+import '../../headers/header_child.dart';
+import './chatbot_api.dart'; // Import the updated API file
 
 class ChatbotPage extends StatefulWidget {
   const ChatbotPage({Key? key}) : super(key: key);
@@ -12,10 +12,9 @@ class ChatbotPage extends StatefulWidget {
 class _ChatbotPageState extends State<ChatbotPage> {
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
-  bool _isHistoryLoading =
-      true; // New flag to show loading while retrieving history
+  bool _isHistoryLoading = true; // Flag for loading history
 
-  // Define some suggestion messages.
+  // Suggestion messages.
   final List<String> _suggestions = [
     "Chào",
     "Tôi cần trợ giúp",
@@ -23,7 +22,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
     "Cảm ơn"
   ];
 
-  // Instance variable for adjusted top padding.
+  // Adjusted top padding.
   double _adjustedTopPadding = 12;
 
   @override
@@ -33,16 +32,25 @@ class _ChatbotPageState extends State<ChatbotPage> {
   }
 
   Future<void> _loadHistoryMessages() async {
-    final history = await Api.getHistoryMessage();
-    setState(() {
-      _messages.addAll(history.map((item) => ChatMessage(
-            text: item["text"],
-            isUser: item["isUser"],
-            timestamp: DateTime.parse(item["timestamp"]),
-          )));
-      _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      _isHistoryLoading = false; // Finished loading history
-    });
+    final history = await ChatbotApi.getHistoryChatBot();
+    if (history != null) {
+      setState(() {
+        // Map the JSON objects to ChatMessage objects.
+        _messages.addAll((history as List).map((item) => ChatMessage(
+              text: item["message"],
+              // isBot: 0 means it's a user message; 1 means it's a bot message.
+              isUser: item["isBot"] == 0,
+              timestamp: DateTime.parse(item["created_at"]),
+            )));
+        // Sort messages in descending order based on timestamp.
+        _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        _isHistoryLoading = false;
+      });
+    } else {
+      setState(() {
+        _isHistoryLoading = false;
+      });
+    }
   }
 
   @override
@@ -57,6 +65,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
   void _sendMessage(String text) {
     if (text.isEmpty) return;
 
+    // If the "Kết thúc cuộc trò chuyện" suggestion is selected, clear history.
     if (text == 'Kết thúc cuộc trò chuyện') {
       showDialog(
         context: context,
@@ -74,7 +83,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
               ),
               TextButton(
                 onPressed: () async {
-                  await Api.clearMessage();
+                  await ChatbotApi.clearHistoryChatBot();
                   setState(() {
                     _messages.clear();
                   });
@@ -92,12 +101,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
 
     final now = DateTime.now();
     setState(() {
+      // Add user message.
       _messages.insert(
           0, ChatMessage(text: text, isUser: true, timestamp: now));
     });
     _controller.clear();
 
-    // Add a temporary bot message with a loading animation.
+    // Add a temporary loading message for the bot.
     final botLoadingMessage = ChatMessage(
       text: "",
       isUser: false,
@@ -108,12 +118,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
       _messages.insert(0, botLoadingMessage);
     });
 
-    Api.getChatbotReply(text).then((reply) {
+    // Send message to API.
+    ChatbotApi.sendMessageToChatBot(text).then((reply) {
       setState(() {
         final index = _messages.indexWhere((m) => m == botLoadingMessage);
         if (index != -1) {
           _messages[index] = ChatMessage(
-            text: reply,
+            text: reply ?? "No reply",
             isUser: false,
             timestamp: DateTime.now(),
           );
@@ -135,7 +146,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
           Expanded(
             child: Column(
               children: [
-                // Message list or loading indicator
+                // Display chat history or loading indicator.
                 Expanded(
                   child: _isHistoryLoading
                       ? Center(
@@ -257,7 +268,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                               },
                             ),
                 ),
-                // Suggestion chips
+                // Suggestion chips.
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -278,7 +289,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                     ),
                   ),
                 ),
-                // Input field
+                // Input field.
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -334,7 +345,7 @@ class ChatMessage {
   });
 }
 
-/// A custom widget that displays three dots that animate up and down.
+/// A custom widget that displays three animated dots.
 class DotLoadingAnimation extends StatefulWidget {
   const DotLoadingAnimation({Key? key}) : super(key: key);
 
@@ -353,8 +364,9 @@ class _DotLoadingAnimationState extends State<DotLoadingAnimation>
   void initState() {
     super.initState();
     _controller = AnimationController(
-        duration: const Duration(milliseconds: 1200), vsync: this)
-      ..repeat();
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat();
     _animation1 = Tween<double>(begin: 0, end: -5).animate(
       CurvedAnimation(
         parent: _controller,

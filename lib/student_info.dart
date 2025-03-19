@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'welcome.dart';
 import 'settings.dart';
 import 'api.dart';
-import 'features/chatbot_ai.dart';
+import 'features/chatbot/chatbot_ai.dart';
 import 'headers/header_main.dart';
 
 class StudentInfoPage extends StatefulWidget {

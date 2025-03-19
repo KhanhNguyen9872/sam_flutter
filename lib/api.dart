@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 class Api {
-  static const String _apiUrl = "http://127.0.0.1:3000";
+  static const String _apiUrl = "http://127.0.0.1:3000/api/v1";
 
   /// Save accessToken and its expiry to SharedPreferences.
   static Future<void> _saveToken(String token, DateTime expiry) async {
